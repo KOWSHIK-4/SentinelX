@@ -28,8 +28,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight"
           >
-            Next-Generation{' '}
-            <span className="gradient-text">SOC Platform</span>
+            Next-Generation <span className="gradient-text">SOC Platform</span>
           </motion.h1>
 
           <motion.p

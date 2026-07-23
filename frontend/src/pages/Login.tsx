@@ -66,7 +66,9 @@ export function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
                 <Input
                   id="email"
                   type="email"
@@ -78,7 +80,9 @@ export function Login() {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </label>
                 <Input
                   id="password"
                   type="password"

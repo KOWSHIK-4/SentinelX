@@ -5,45 +5,25 @@ const layers = [
   {
     icon: Network,
     title: 'Ingestion Layer',
-    items: [
-      'Log Collection',
-      'Network Flow Data',
-      'Cloud APIs',
-      'Threat Feeds',
-    ],
+    items: ['Log Collection', 'Network Flow Data', 'Cloud APIs', 'Threat Feeds'],
     color: 'from-blue-500 to-cyan-500',
   },
   {
     icon: Cpu,
     title: 'AI Engine',
-    items: [
-      'ML Detection Models',
-      'Behavioral Analysis',
-      'Anomaly Detection',
-      'Risk Scoring',
-    ],
+    items: ['ML Detection Models', 'Behavioral Analysis', 'Anomaly Detection', 'Risk Scoring'],
     color: 'from-purple-500 to-pink-500',
   },
   {
     icon: Database,
     title: 'Data Layer',
-    items: [
-      'Time-Series Database',
-      'Graph Relationships',
-      'Search Index',
-      'Data Lake',
-    ],
+    items: ['Time-Series Database', 'Graph Relationships', 'Search Index', 'Data Lake'],
     color: 'from-orange-500 to-red-500',
   },
   {
     icon: Layers,
     title: 'Presentation Layer',
-    items: [
-      'Dashboard & Visualizations',
-      'Alert Management',
-      'Incident Response',
-      'Reporting',
-    ],
+    items: ['Dashboard & Visualizations', 'Alert Management', 'Incident Response', 'Reporting'],
     color: 'from-green-500 to-emerald-500',
   },
 ];
@@ -81,7 +61,9 @@ export function Architecture() {
                 className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-8`}
               >
                 <div className="flex-1">
-                  <div className={`inline-flex items-center gap-2 rounded-lg bg-gradient-to-r ${layer.color} p-0.5`}>
+                  <div
+                    className={`inline-flex items-center gap-2 rounded-lg bg-gradient-to-r ${layer.color} p-0.5`}
+                  >
                     <div className="flex items-center gap-2 rounded-lg bg-card px-4 py-2">
                       <layer.icon className="h-5 w-5" />
                       <span className="font-semibold">{layer.title}</span>
@@ -89,8 +71,13 @@ export function Architecture() {
                   </div>
                   <ul className="mt-4 space-y-2">
                     {layer.items.map((item) => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <div className={`h-1.5 w-1.5 rounded-full bg-gradient-to-r ${layer.color}`} />
+                      <li
+                        key={item}
+                        className="flex items-center gap-2 text-sm text-muted-foreground"
+                      >
+                        <div
+                          className={`h-1.5 w-1.5 rounded-full bg-gradient-to-r ${layer.color}`}
+                        />
                         {item}
                       </li>
                     ))}

@@ -4,7 +4,8 @@ import { CheckCircle2 } from 'lucide-react';
 const reasons = [
   {
     title: 'AI-First Approach',
-    description: 'Built from the ground up with machine learning at its core, reducing alert fatigue by 95%.',
+    description:
+      'Built from the ground up with machine learning at its core, reducing alert fatigue by 95%.',
   },
   {
     title: 'Enterprise Scalability',
@@ -12,7 +13,8 @@ const reasons = [
   },
   {
     title: 'Open Integration',
-    description: 'Seamlessly integrate with 200+ security tools, SIEMs, and infrastructure platforms.',
+    description:
+      'Seamlessly integrate with 200+ security tools, SIEMs, and infrastructure platforms.',
   },
   {
     title: 'Zero Trust Ready',
@@ -24,7 +26,8 @@ const reasons = [
   },
   {
     title: 'Rapid Deployment',
-    description: 'Get up and running in minutes, not months. Cloud-native deployment with flexible options.',
+    description:
+      'Get up and running in minutes, not months. Cloud-native deployment with flexible options.',
   },
 ];
 

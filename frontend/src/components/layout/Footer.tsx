@@ -14,7 +14,8 @@ export function Footer() {
               <span className="text-lg font-bold">SentinelX</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              AI-powered Security Operations Center platform for modern threat detection and response.
+              AI-powered Security Operations Center platform for modern threat detection and
+              response.
             </p>
           </div>
 

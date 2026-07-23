@@ -69,7 +69,9 @@ export function Register() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="firstName" className="text-sm font-medium">First Name</label>
+                  <label htmlFor="firstName" className="text-sm font-medium">
+                    First Name
+                  </label>
                   <Input
                     id="firstName"
                     placeholder="John"
@@ -80,7 +82,9 @@ export function Register() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="lastName" className="text-sm font-medium">Last Name</label>
+                  <label htmlFor="lastName" className="text-sm font-medium">
+                    Last Name
+                  </label>
                   <Input
                     id="lastName"
                     placeholder="Doe"
@@ -92,7 +96,9 @@ export function Register() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
                 <Input
                   id="email"
                   type="email"
@@ -104,7 +110,9 @@ export function Register() {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </label>
                 <Input
                   id="password"
                   type="password"

@@ -15,9 +15,7 @@ export function Dashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">SOC Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Welcome back. Here is your security overview.
-        </p>
+        <p className="text-muted-foreground mt-1">Welcome back. Here is your security overview.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -51,10 +49,26 @@ export function Dashboard() {
           <CardContent>
             <div className="space-y-4">
               {[
-                { severity: 'critical', title: 'Suspicious outbound traffic detected', time: '2 min ago' },
-                { severity: 'warning', title: 'Failed login attempts from unknown IP', time: '15 min ago' },
-                { severity: 'warning', title: 'Unusual database query pattern', time: '1 hour ago' },
-                { severity: 'info', title: 'SSL certificate expiring in 7 days', time: '3 hours ago' },
+                {
+                  severity: 'critical',
+                  title: 'Suspicious outbound traffic detected',
+                  time: '2 min ago',
+                },
+                {
+                  severity: 'warning',
+                  title: 'Failed login attempts from unknown IP',
+                  time: '15 min ago',
+                },
+                {
+                  severity: 'warning',
+                  title: 'Unusual database query pattern',
+                  time: '1 hour ago',
+                },
+                {
+                  severity: 'info',
+                  title: 'SSL certificate expiring in 7 days',
+                  time: '3 hours ago',
+                },
               ].map((incident) => (
                 <div
                   key={incident.title}

@@ -3,7 +3,11 @@ import { verifyToken } from '../utils/jwt';
 import { AuthRequest } from '../types';
 import { ApiResponse } from '../types';
 
-export function authenticate(req: AuthRequest, res: Response<ApiResponse>, next: NextFunction): void {
+export function authenticate(
+  req: AuthRequest,
+  res: Response<ApiResponse>,
+  next: NextFunction,
+): void {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

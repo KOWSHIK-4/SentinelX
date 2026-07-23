@@ -1,12 +1,5 @@
 import { motion } from 'framer-motion';
-import {
-  Brain,
-  Bell,
-  Shield,
-  BarChart3,
-  Workflow,
-  Lock,
-} from 'lucide-react';
+import { Brain, Bell, Shield, BarChart3, Workflow, Lock } from 'lucide-react';
 
 const features = [
   {
@@ -24,26 +17,22 @@ const features = [
   {
     icon: Shield,
     title: 'Threat Intelligence',
-    description:
-      'Integrated threat feeds and IoC correlation for comprehensive threat visibility.',
+    description: 'Integrated threat feeds and IoC correlation for comprehensive threat visibility.',
   },
   {
     icon: BarChart3,
     title: 'Security Analytics',
-    description:
-      'Powerful dashboards and reports with deep insights into your security posture.',
+    description: 'Powerful dashboards and reports with deep insights into your security posture.',
   },
   {
     icon: Workflow,
     title: 'Automated Response',
-    description:
-      'Orchestrate incident response workflows with automated playbooks and actions.',
+    description: 'Orchestrate incident response workflows with automated playbooks and actions.',
   },
   {
     icon: Lock,
     title: 'Compliance Ready',
-    description:
-      'Built-in compliance frameworks for SOC 2, ISO 27001, GDPR, and HIPAA.',
+    description: 'Built-in compliance frameworks for SOC 2, ISO 27001, GDPR, and HIPAA.',
   },
 ];
 
@@ -59,8 +48,7 @@ export function Features() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold">
-            Enterprise-Grade{' '}
-            <span className="gradient-text">Security Features</span>
+            Enterprise-Grade <span className="gradient-text">Security Features</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to build and operate a modern SOC.
