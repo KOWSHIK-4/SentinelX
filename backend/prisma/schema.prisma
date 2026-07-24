@@ -85,6 +85,31 @@ enum IncidentSeverity {
   CRITICAL
 }
 
+enum AssetType {
+  SERVER
+  WORKSTATION
+  LAPTOP
+  FIREWALL
+  SWITCH
+  ROUTER
+  CLOUD_VM
+  DATABASE
+  OTHER
+}
+
+enum Criticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AssetStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
 model Incident {
   id          String           @id @default(cuid())
   title       String
@@ -98,10 +123,47 @@ model Incident {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
+  assets IncidentAsset[]
+
   @@index([status])
   @@index([severity])
   @@index([assignedTo])
   @@index([createdAt])
   @@index([title, description])
   @@map("incidents")
+}
+
+model Asset {
+  id              String      @id @default(cuid())
+  assetName       String
+  hostname        String?
+  ipAddress       String?
+  assetType       AssetType   @default(OTHER)
+  operatingSystem String?
+  owner           String?
+  department      String?
+  criticality     Criticality @default(MEDIUM)
+  status          AssetStatus @default(ACTIVE)
+  location        String?
+  description     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  incidents IncidentAsset[]
+
+  @@index([assetName])
+  @@index([assetType])
+  @@index([status])
+  @@index([criticality])
+  @@map("assets")
+}
+
+model IncidentAsset {
+  incidentId String
+  assetId    String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([incidentId, assetId])
+  @@map("incident_assets")
 }

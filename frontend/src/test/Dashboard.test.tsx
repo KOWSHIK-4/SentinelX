@@ -23,6 +23,20 @@ vi.mock('@/lib/api', () => {
         },
       }),
     },
+    assetApi: {
+      getDashboardStats: () => Promise.resolve({
+        success: true,
+        data: {
+          totalAssets: 20,
+          activeAssets: 15,
+          maintenanceAssets: 3,
+          retiredAssets: 2,
+          criticalAssets: 4,
+          highAssets: 5,
+          recentAssets: [],
+        },
+      }),
+    },
     api: vi.fn(),
     authApi: {},
   };
@@ -57,8 +71,8 @@ describe('Dashboard', () => {
     await waitFor(() => {
       expect(screen.getByText('Total Incidents')).toBeInTheDocument();
       expect(screen.getByText('Open Incidents')).toBeInTheDocument();
-      expect(screen.getByText('Critical')).toBeInTheDocument();
-      expect(screen.getByText('Resolved')).toBeInTheDocument();
+      expect(screen.getAllByText('Resolved').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Critical').length).toBe(2);
     });
   });
 

@@ -6,6 +6,7 @@ export const createIncidentSchema = z.object({
   status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
   assignedTo: z.string().nullable().optional(),
+  assetIds: z.array(z.string()).optional(),
 });
 
 export const updateIncidentSchema = z.object({
@@ -14,6 +15,7 @@ export const updateIncidentSchema = z.object({
   status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
   assignedTo: z.string().nullable().optional(),
+  assetIds: z.array(z.string()).optional(),
 });
 
 export const incidentQuerySchema = z.object({

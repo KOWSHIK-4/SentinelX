@@ -3,6 +3,22 @@ import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import type { AuthRequest } from '../../types';
 
+const incidentInclude = {
+  createdBy: {
+    select: { id: true, firstName: true, lastName: true, email: true },
+  },
+  assignedUser: {
+    select: { id: true, firstName: true, lastName: true, email: true },
+  },
+  assets: {
+    include: {
+      asset: {
+        select: { id: true, assetName: true, assetType: true, ipAddress: true, status: true, criticality: true },
+      },
+    },
+  },
+} as const;
+
 export class IncidentService {
   async create(req: AuthRequest, data: {
     title: string;
@@ -10,24 +26,23 @@ export class IncidentService {
     status?: string;
     severity?: string;
     assignedTo?: string | null;
+    assetIds?: string[];
   }) {
+    const { assetIds, ...incidentData } = data;
+
     return prisma.incident.create({
       data: {
-        title: data.title,
-        description: data.description,
-        status: (data.status as $Enums.IncidentStatus) || 'OPEN',
-        severity: (data.severity as $Enums.IncidentSeverity) || 'MEDIUM',
-        assignedTo: data.assignedTo ?? null,
+        title: incidentData.title,
+        description: incidentData.description,
+        status: (incidentData.status as $Enums.IncidentStatus) || 'OPEN',
+        severity: (incidentData.severity as $Enums.IncidentSeverity) || 'MEDIUM',
+        assignedTo: incidentData.assignedTo ?? null,
         createdById: req.user!.userId,
+        ...(assetIds && assetIds.length > 0
+          ? { assets: { create: assetIds.map((assetId) => ({ assetId })) } }
+          : {}),
       },
-      include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        assignedUser: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: incidentInclude,
     });
   }
 
@@ -86,14 +101,7 @@ export class IncidentService {
         orderBy,
         skip,
         take: query.limit,
-        include: {
-          createdBy: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-          assignedUser: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-        },
+        include: incidentInclude,
       }),
       prisma.incident.count({ where }),
     ]);
@@ -112,14 +120,7 @@ export class IncidentService {
   async findById(id: string) {
     const incident = await prisma.incident.findUnique({
       where: { id },
-      include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        assignedUser: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: incidentInclude,
     });
 
     if (!incident) {
@@ -135,6 +136,7 @@ export class IncidentService {
     status?: string;
     severity?: string;
     assignedTo?: string | null;
+    assetIds?: string[];
   }) {
     const existing = await prisma.incident.findUnique({ where: { id } });
 
@@ -150,17 +152,19 @@ export class IncidentService {
     if (data.severity !== undefined) updateData.severity = data.severity as Prisma.EnumIncidentSeverityFilter['equals'];
     if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo;
 
+    if (data.assetIds !== undefined) {
+      await prisma.incidentAsset.deleteMany({ where: { incidentId: id } });
+      if (data.assetIds.length > 0) {
+        await prisma.incidentAsset.createMany({
+          data: data.assetIds.map((assetId) => ({ incidentId: id, assetId })),
+        });
+      }
+    }
+
     return prisma.incident.update({
       where: { id },
       data: updateData,
-      include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        assignedUser: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: incidentInclude,
     });
   }
 

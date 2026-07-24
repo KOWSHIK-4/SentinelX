@@ -92,6 +92,16 @@ export interface Incident {
   createdBy: IncidentUser;
   createdAt: string;
   updatedAt: string;
+  assets?: {
+    asset: {
+      id: string;
+      assetName: string;
+      assetType: string;
+      ipAddress: string | null;
+      status: string;
+      criticality: string;
+    };
+  }[];
 }
 
 export interface PaginationInfo {
@@ -128,6 +138,119 @@ export interface DashboardStatsResponse {
   data: DashboardStats;
 }
 
+export interface Asset {
+  id: string;
+  assetName: string;
+  hostname: string | null;
+  ipAddress: string | null;
+  assetType: 'SERVER' | 'WORKSTATION' | 'LAPTOP' | 'FIREWALL' | 'SWITCH' | 'ROUTER' | 'CLOUD_VM' | 'DATABASE' | 'OTHER';
+  operatingSystem: string | null;
+  owner: string | null;
+  department: string | null;
+  criticality: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: 'ACTIVE' | 'MAINTENANCE' | 'RETIRED';
+  location: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssetListResponse {
+  success: boolean;
+  data: Asset[];
+  pagination: PaginationInfo;
+}
+
+export interface AssetResponse {
+  success: boolean;
+  data: Asset;
+  message?: string;
+}
+
+export interface AssetDetailResponse {
+  success: boolean;
+  data: Asset & {
+    incidents: {
+      incident: {
+        id: string;
+        title: string;
+        status: string;
+        severity: string;
+        createdAt: string;
+      };
+    }[];
+  };
+}
+
+export interface AssetDashboardStats {
+  totalAssets: number;
+  activeAssets: number;
+  maintenanceAssets: number;
+  retiredAssets: number;
+  criticalAssets: number;
+  highAssets: number;
+  recentAssets: Asset[];
+}
+
+export interface AssetDashboardStatsResponse {
+  success: boolean;
+  data: AssetDashboardStats;
+}
+
+export const assetApi = {
+  list: (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return api<AssetListResponse>(`/assets${query}`);
+  },
+
+  getById: (id: string) =>
+    api<AssetDetailResponse>(`/assets/${id}`),
+
+  create: (data: {
+    assetName: string;
+    hostname?: string | null;
+    ipAddress?: string | null;
+    assetType?: string;
+    operatingSystem?: string | null;
+    owner?: string | null;
+    department?: string | null;
+    criticality?: string;
+    status?: string;
+    location?: string | null;
+    description?: string | null;
+  }) =>
+    api<AssetResponse>('/assets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: {
+    assetName?: string;
+    hostname?: string | null;
+    ipAddress?: string | null;
+    assetType?: string;
+    operatingSystem?: string | null;
+    owner?: string | null;
+    department?: string | null;
+    criticality?: string;
+    status?: string;
+    location?: string | null;
+    description?: string | null;
+  }) =>
+    api<AssetResponse>(`/assets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    api<{ success: boolean; message: string }>(`/assets/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getDashboardStats: () =>
+    api<AssetDashboardStatsResponse>('/assets/stats'),
+};
+
 export const incidentApi = {
   list: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
@@ -137,13 +260,13 @@ export const incidentApi = {
   getById: (id: string) =>
     api<IncidentResponse>(`/incidents/${id}`),
 
-  create: (data: { title: string; description: string; severity?: string; status?: string; assignedTo?: string | null }) =>
+  create: (data: { title: string; description: string; severity?: string; status?: string; assignedTo?: string | null; assetIds?: string[] }) =>
     api<IncidentResponse>('/incidents', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: { title?: string; description?: string; status?: string; severity?: string; assignedTo?: string | null }) =>
+  update: (id: string, data: { title?: string; description?: string; status?: string; severity?: string; assignedTo?: string | null; assetIds?: string[] }) =>
     api<IncidentResponse>(`/incidents/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

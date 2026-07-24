@@ -110,6 +110,24 @@ async function main() {
     console.log('  - 10 sample incidents created');
   }
 
+  const existingAssets = await prisma.asset.count();
+  if (existingAssets === 0) {
+    const assetData = [
+      { assetName: 'Primary Web Server', hostname: 'web-01.sentinelx.io', ipAddress: '10.0.1.10', assetType: 'SERVER' as const, operatingSystem: 'Ubuntu 22.04 LTS', owner: 'Infra Team', department: 'Engineering', criticality: 'CRITICAL' as const, status: 'ACTIVE' as const, location: 'DC-1 Rack A3', description: 'Primary web server hosting main application.' },
+      { assetName: 'Database Server', hostname: 'db-01.sentinelx.io', ipAddress: '10.0.2.10', assetType: 'DATABASE' as const, operatingSystem: 'Ubuntu 22.04 LTS', owner: 'DBA Team', department: 'Engineering', criticality: 'CRITICAL' as const, status: 'ACTIVE' as const, location: 'DC-1 Rack B1', description: 'Primary PostgreSQL database server.' },
+      { assetName: 'Gateway Firewall', hostname: 'fw-01.sentinelx.io', ipAddress: '10.0.0.1', assetType: 'FIREWALL' as const, operatingSystem: 'FortiOS 7.4', owner: 'Security Team', department: 'Security', criticality: 'CRITICAL' as const, status: 'ACTIVE' as const, location: 'DC-1 Rack A1', description: 'Main network gateway firewall.' },
+      { assetName: 'Internal Switch', hostname: 'sw-01.sentinelx.io', ipAddress: '10.0.0.2', assetType: 'SWITCH' as const, operatingSystem: 'Cisco IOS XE', owner: 'Network Team', department: 'Infrastructure', criticality: 'HIGH' as const, status: 'ACTIVE' as const, location: 'DC-1 Rack A2', description: 'Core distribution switch.' },
+      { assetName: 'Dev Laptop - Alice', hostname: 'alice-dev', ipAddress: '192.168.1.50', assetType: 'LAPTOP' as const, operatingSystem: 'macOS Sonoma', owner: 'Alice Johnson', department: 'Engineering', criticality: 'MEDIUM' as const, status: 'ACTIVE' as const, location: 'Remote', description: 'Developer workstation.' },
+      { assetName: 'Mail Server', hostname: 'mail-01.sentinelx.io', ipAddress: '10.0.3.10', assetType: 'SERVER' as const, operatingSystem: 'Debian 12', owner: 'Infra Team', department: 'Engineering', criticality: 'HIGH' as const, status: 'MAINTENANCE' as const, location: 'DC-1 Rack A4', description: 'Corporate mail server - under maintenance.' },
+      { assetName: 'Load Balancer', hostname: 'lb-01.sentinelx.io', ipAddress: '10.0.1.1', assetType: 'ROUTER' as const, operatingSystem: 'HAProxy 2.8', owner: 'Network Team', department: 'Infrastructure', criticality: 'HIGH' as const, status: 'ACTIVE' as const, location: 'DC-1 Rack A2', description: 'Application load balancer.' },
+      { assetName: 'Cloud VM - Staging', hostname: 'staging-vm-01', ipAddress: '10.0.10.10', assetType: 'CLOUD_VM' as const, operatingSystem: 'Ubuntu 22.04 LTS', owner: 'DevOps Team', department: 'Engineering', criticality: 'LOW' as const, status: 'ACTIVE' as const, location: 'AWS us-east-1', description: 'Staging environment VM.' },
+      { assetName: 'Retired NAS', hostname: 'nas-old', ipAddress: '10.0.5.10', assetType: 'SERVER' as const, operatingSystem: 'FreeNAS 11', owner: 'Infra Team', department: 'Engineering', criticality: 'LOW' as const, status: 'RETIRED' as const, location: 'DC-1 Rack C5', description: 'Decommissioned network storage.' },
+      { assetName: 'Workstation - Ops Center', hostname: 'ops-ws-01', ipAddress: '192.168.1.10', assetType: 'WORKSTATION' as const, operatingSystem: 'Windows 11 Pro', owner: 'SOC Team', department: 'Security', criticality: 'MEDIUM' as const, status: 'ACTIVE' as const, location: 'SOC Floor', description: 'Primary SOC monitoring workstation.' },
+    ];
+    await prisma.asset.createMany({ data: assetData });
+    console.log('  - 10 sample assets created');
+  }
+
   console.log('Seed complete.');
 }
 

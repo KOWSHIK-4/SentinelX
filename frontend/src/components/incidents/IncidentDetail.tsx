@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { formatDate } from '@/lib/utils';
 import type { Incident } from '@/lib/api';
-import { X, Calendar, User, AlertTriangle } from 'lucide-react';
+import { X, Calendar, User, AlertTriangle, Server } from 'lucide-react';
 
 interface IncidentDetailProps {
   incident: Incident;
@@ -22,6 +22,13 @@ const statusColors: Record<string, 'destructive' | 'warning' | 'success' | 'defa
   IN_PROGRESS: 'warning',
   RESOLVED: 'success',
   CLOSED: 'default',
+};
+
+const criticalityDot: Record<string, string> = {
+  CRITICAL: 'bg-destructive',
+  HIGH: 'bg-amber-500',
+  MEDIUM: 'bg-blue-500',
+  LOW: 'bg-slate-500',
 };
 
 export function IncidentDetail({ incident, onClose }: IncidentDetailProps) {
@@ -74,6 +81,37 @@ export function IncidentDetail({ incident, onClose }: IncidentDetailProps) {
               <span>{formatDate(incident.updatedAt)}</span>
             </div>
           </div>
+
+          {incident.assets && incident.assets.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Server className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Affected Assets ({incident.assets.length})</span>
+                </div>
+                <div className="space-y-2">
+                  {incident.assets.map(({ asset }) => (
+                    <div
+                      key={asset.id}
+                      className="flex items-center justify-between rounded-lg border border-border/40 p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`h-2 w-2 rounded-full ${criticalityDot[asset.criticality] || 'bg-blue-500'}`} />
+                        <div>
+                          <p className="text-sm font-medium">{asset.assetName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {asset.assetType} {asset.ipAddress ? `\u00b7 ${asset.ipAddress}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{asset.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

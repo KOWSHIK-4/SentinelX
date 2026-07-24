@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, AlertTriangle, Shield, Server, RefreshCw } from 'lucide-react';
+import { Activity, AlertTriangle, Shield, Server, RefreshCw, Monitor, Wrench } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { incidentApi, type DashboardStats } from '@/lib/api';
+import { incidentApi, assetApi, type DashboardStats, type AssetDashboardStats } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 
 const severityDot: Record<string, string> = {
@@ -17,6 +17,7 @@ const severityDot: Record<string, string> = {
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [assetStats, setAssetStats] = useState<AssetDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,8 +25,12 @@ export function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const res = await incidentApi.getDashboardStats();
-      setStats(res.data);
+      const [incidentRes, assetRes] = await Promise.all([
+        incidentApi.getDashboardStats(),
+        assetApi.getDashboardStats(),
+      ]);
+      setStats(incidentRes.data);
+      setAssetStats(assetRes.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard stats.');
     } finally {
@@ -42,6 +47,13 @@ export function Dashboard() {
     { icon: AlertTriangle, label: 'Open Incidents', value: stats?.openIncidents ?? 0, variant: 'warning' as const },
     { icon: Shield, label: 'Critical', value: stats?.criticalIncidents ?? 0, variant: 'destructive' as const },
     { icon: Server, label: 'Resolved', value: stats?.resolvedIncidents ?? 0, variant: 'success' as const },
+  ];
+
+  const assetStatCards = [
+    { icon: Server, label: 'Total Assets', value: assetStats?.totalAssets ?? 0, variant: 'default' as const },
+    { icon: Monitor, label: 'Active Assets', value: assetStats?.activeAssets ?? 0, variant: 'success' as const },
+    { icon: AlertTriangle, label: 'Critical Assets', value: assetStats?.criticalAssets ?? 0, variant: 'destructive' as const },
+    { icon: Wrench, label: 'Under Maintenance', value: assetStats?.maintenanceAssets ?? 0, variant: 'warning' as const },
   ];
 
   return (
@@ -88,6 +100,36 @@ export function Dashboard() {
             </Card>
           </motion.div>
         ))}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight mb-4">Asset Overview</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {assetStatCards.map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 + 0.2 }}
+            >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.label}
+                  </CardTitle>
+                  <stat.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
@@ -163,6 +205,51 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Assets</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+              ))}
+            </div>
+          ) : assetStats?.recentAssets && assetStats.recentAssets.length > 0 ? (
+            <div className="space-y-4">
+              {assetStats.recentAssets.map((asset) => (
+                <div
+                  key={asset.id}
+                  className="flex items-center justify-between rounded-lg border border-border/40 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Server className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <span className="text-sm font-medium">{asset.assetName}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {asset.assetType} {asset.ipAddress ? `\u00b7 ${asset.ipAddress}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={asset.criticality === 'CRITICAL' ? 'destructive' : asset.criticality === 'HIGH' ? 'warning' : 'default'}>
+                      {asset.criticality}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{formatDate(asset.createdAt)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">No assets yet.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
