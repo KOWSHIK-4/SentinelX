@@ -549,6 +549,75 @@ export const teamApi = {
     }),
 };
 
+export interface SettingsData {
+  id: string;
+  organizationName: string;
+  companyName: string | null;
+  industry: string | null;
+  website: string | null;
+  email: string | null;
+  phone: string | null;
+  timeZone: string | null;
+  address: string | null;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  accentColor: string | null;
+  applicationName: string | null;
+  passwordMinLength: number;
+  requireUppercase: boolean;
+  requireNumbers: boolean;
+  requireSymbols: boolean;
+  sessionTimeoutMinutes: number;
+  mfaEnabled: boolean;
+  emailNotifications: boolean;
+  browserNotifications: boolean;
+  criticalAlerts: boolean;
+  dailySummaryEmails: boolean;
+  theme: 'dark' | 'light' | 'system';
+  sidebarCollapsed: boolean;
+  compactMode: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SettingsResponse {
+  success: boolean;
+  data: SettingsData;
+  message?: string;
+}
+
+export interface SystemInfo {
+  applicationVersion: string;
+  databaseStatus: string;
+  apiStatus: string;
+  dockerStatus: string;
+  lastBackupTime: string;
+}
+
+export interface SystemInfoResponse {
+  success: boolean;
+  data: SystemInfo;
+}
+
+export const settingsApi = {
+  get: () =>
+    api<SettingsResponse>('/settings'),
+
+  update: (data: Partial<SettingsData>) =>
+    api<SettingsResponse>('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  reset: () =>
+    api<SettingsResponse>('/settings/reset', {
+      method: 'POST',
+    }),
+
+  getSystemInfo: () =>
+    api<SystemInfoResponse>('/settings/system'),
+};
+
 export const reportsApi = {
   getIncidents: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';

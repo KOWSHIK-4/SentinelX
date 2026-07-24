@@ -1,0 +1,33 @@
+-- CreateTable
+CREATE TABLE "settings" (
+    "id" TEXT NOT NULL,
+    "organizationName" TEXT NOT NULL DEFAULT '',
+    "companyName" TEXT,
+    "industry" TEXT,
+    "website" TEXT,
+    "email" TEXT,
+    "phone" TEXT,
+    "timeZone" TEXT DEFAULT 'UTC',
+    "address" TEXT,
+    "logoUrl" TEXT,
+    "primaryColor" TEXT DEFAULT '#2563eb',
+    "accentColor" TEXT DEFAULT '#7c3aed',
+    "applicationName" TEXT DEFAULT 'SentinelX',
+    "passwordMinLength" INTEGER NOT NULL DEFAULT 12,
+    "requireUppercase" BOOLEAN NOT NULL DEFAULT true,
+    "requireNumbers" BOOLEAN NOT NULL DEFAULT true,
+    "requireSymbols" BOOLEAN NOT NULL DEFAULT true,
+    "sessionTimeoutMinutes" INTEGER NOT NULL DEFAULT 60,
+    "mfaEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "emailNotifications" BOOLEAN NOT NULL DEFAULT true,
+    "browserNotifications" BOOLEAN NOT NULL DEFAULT true,
+    "criticalAlerts" BOOLEAN NOT NULL DEFAULT true,
+    "dailySummaryEmails" BOOLEAN NOT NULL DEFAULT false,
+    "theme" TEXT NOT NULL DEFAULT 'system',
+    "sidebarCollapsed" BOOLEAN NOT NULL DEFAULT false,
+    "compactMode" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "settings_pkey" PRIMARY KEY ("id")
+);

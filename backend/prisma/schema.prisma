@@ -159,6 +159,39 @@ model Asset {
   @@map("assets")
 }
 
+model Settings {
+  id                    String   @id @default(cuid())
+  organizationName      String   @default("")
+  companyName           String?
+  industry              String?
+  website               String?
+  email                 String?
+  phone                 String?
+  timeZone              String?  @default("UTC")
+  address               String?
+  logoUrl               String?
+  primaryColor          String?  @default("#2563eb")
+  accentColor           String?  @default("#7c3aed")
+  applicationName       String?  @default("SentinelX")
+  passwordMinLength     Int      @default(12)
+  requireUppercase      Boolean  @default(true)
+  requireNumbers        Boolean  @default(true)
+  requireSymbols        Boolean  @default(true)
+  sessionTimeoutMinutes Int      @default(60)
+  mfaEnabled            Boolean  @default(false)
+  emailNotifications    Boolean  @default(true)
+  browserNotifications  Boolean  @default(true)
+  criticalAlerts        Boolean  @default(true)
+  dailySummaryEmails    Boolean  @default(false)
+  theme                 String   @default("system")
+  sidebarCollapsed      Boolean  @default(false)
+  compactMode           Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("settings")
+}
+
 model IncidentAsset {
   incidentId String
   assetId    String
