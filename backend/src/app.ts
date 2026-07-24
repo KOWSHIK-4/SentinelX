@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/auth.routes';
 import incidentRoutes from './modules/incidents/incident.routes';
 import assetRoutes from './modules/assets/asset.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.use(errorHandler);
 
