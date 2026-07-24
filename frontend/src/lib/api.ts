@@ -499,6 +499,56 @@ export interface ExportResponse {
   message: string;
 }
 
+export interface TeamMember {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  lastLogin: string | null;
+  roles: { id: string; name: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamListResponse {
+  success: boolean;
+  data: TeamMember[];
+}
+
+export interface TeamMemberResponse {
+  success: boolean;
+  data: TeamMember;
+  message?: string;
+}
+
+export interface DeleteResponse {
+  success: boolean;
+  message: string;
+}
+
+export const teamApi = {
+  list: () =>
+    api<TeamListResponse>('/team'),
+
+  create: (data: { email: string; password: string; firstName: string; lastName: string; roleName: string }) =>
+    api<TeamMemberResponse>('/team', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: { email?: string; firstName?: string; lastName?: string; roleName?: string; isActive?: boolean }) =>
+    api<TeamMemberResponse>(`/team/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    api<DeleteResponse>(`/team/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
 export const reportsApi = {
   getIncidents: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
