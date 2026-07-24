@@ -10,6 +10,7 @@ import { ErrorPage } from '@/pages/ErrorPage';
 import { Incidents } from '@/pages/Incidents';
 import { Assets } from '@/pages/Assets';
 import { Analytics } from '@/pages/Analytics';
+import { Notifications } from '@/pages/Notifications';
 import { Reports } from '@/pages/Reports';
 import { Team } from '@/pages/Team';
 import { Settings } from '@/pages/Settings';
@@ -33,6 +34,7 @@ export default function App() {
                 <Route path="incidents" element={<Incidents />} />
                 <Route path="assets" element={<Assets />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="notifications" element={<Notifications />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />

@@ -9,14 +9,18 @@ import {
   FileText,
   BarChart3,
   LogOut,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const sidebarItems = [
   { icon: Activity, label: 'Overview', href: '/dashboard' },
   { icon: AlertTriangle, label: 'Incidents', href: '/dashboard/incidents' },
+  { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
   { icon: Server, label: 'Assets', href: '/dashboard/assets' },
   { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
   { icon: FileText, label: 'Reports', href: '/dashboard/reports' },
@@ -26,6 +30,7 @@ const sidebarItems = [
 
 export function Sidebar() {
   const { user, logout } = useAuthStore();
+  const { unreadCount } = useNotificationStore();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -60,7 +65,12 @@ export function Sidebar() {
               }
             >
               <item.icon className="h-4 w-4" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.label === 'Notifications' && unreadCount > 0 && (
+                <Badge variant="default" className="ml-auto h-5 min-w-[20px] px-1 text-[10px]">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
             </NavLink>
           ))}
         </div>

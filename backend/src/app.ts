@@ -11,6 +11,7 @@ import analyticsRoutes from './modules/analytics/analytics.routes';
 import reportRoutes from './modules/reports/reports.routes';
 import teamRoutes from './modules/team/team.routes';
 import settingsRoutes from './modules/settings/settings.routes';
+import notificationRoutes from './modules/notifications/notifications.routes';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(errorHandler);
 

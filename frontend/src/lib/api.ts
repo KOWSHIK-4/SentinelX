@@ -618,6 +618,55 @@ export const settingsApi = {
     api<SystemInfoResponse>('/settings/system'),
 };
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  severity: string;
+  isRead: boolean;
+  link: string | null;
+  userId: string;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  success: boolean;
+  data: Notification[];
+}
+
+export interface NotificationResponse {
+  success: boolean;
+  data: Notification;
+  message?: string;
+}
+
+export const notificationApi = {
+  list: () =>
+    api<NotificationListResponse>('/notifications'),
+
+  create: (data: { title: string; message: string; type: string; severity?: string; link?: string | null }) =>
+    api<NotificationResponse>('/notifications', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  markRead: (id: string) =>
+    api<NotificationResponse>(`/notifications/${id}/read`, {
+      method: 'PUT',
+    }),
+
+  markAllRead: () =>
+    api<{ success: boolean; message: string }>('/notifications/read-all', {
+      method: 'PUT',
+    }),
+
+  delete: (id: string) =>
+    api<DeleteResponse>(`/notifications/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
 export const reportsApi = {
   getIncidents: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
