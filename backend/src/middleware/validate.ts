@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema } from 'zod';
-import { ApiResponse } from '../types';
+import { ApiResponse, AuthRequest } from '../types';
 
-export function validate(schema: ZodSchema) {
+type ValidateSource = 'body' | 'query';
+
+export function validate(schema: ZodSchema, source: ValidateSource = 'body') {
   return (req: Request, res: Response<ApiResponse>, next: NextFunction): void => {
-    const result = schema.safeParse(req.body);
+    const data = source === 'body' ? req.body : req.query;
+    const result = schema.safeParse(data);
 
     if (!result.success) {
       res.status(400).json({
@@ -15,7 +18,11 @@ export function validate(schema: ZodSchema) {
       return;
     }
 
-    req.body = result.data;
+    if (source === 'body') {
+      req.body = result.data;
+    } else {
+      (req as AuthRequest).validatedQuery = result.data as Record<string, unknown>;
+    }
     next();
   };
 }

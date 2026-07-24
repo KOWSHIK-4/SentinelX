@@ -72,3 +72,88 @@ export const authApi = {
   profile: () =>
     api<ProfileResponseData>('/auth/profile'),
 };
+
+export interface IncidentUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  assignedTo: string | null;
+  assignedUser: IncidentUser | null;
+  createdById: string;
+  createdBy: IncidentUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface IncidentListResponse {
+  success: boolean;
+  data: Incident[];
+  pagination: PaginationInfo;
+}
+
+export interface IncidentResponse {
+  success: boolean;
+  data: Incident;
+  message?: string;
+}
+
+export interface DashboardStats {
+  totalIncidents: number;
+  openIncidents: number;
+  inProgressIncidents: number;
+  resolvedIncidents: number;
+  criticalIncidents: number;
+  highIncidents: number;
+  recentIncidents: Incident[];
+}
+
+export interface DashboardStatsResponse {
+  success: boolean;
+  data: DashboardStats;
+}
+
+export const incidentApi = {
+  list: (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return api<IncidentListResponse>(`/incidents${query}`);
+  },
+
+  getById: (id: string) =>
+    api<IncidentResponse>(`/incidents/${id}`),
+
+  create: (data: { title: string; description: string; severity?: string; status?: string; assignedTo?: string | null }) =>
+    api<IncidentResponse>('/incidents', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: { title?: string; description?: string; status?: string; severity?: string; assignedTo?: string | null }) =>
+    api<IncidentResponse>(`/incidents/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    api<{ success: boolean; message: string }>(`/incidents/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getDashboardStats: () =>
+    api<DashboardStatsResponse>('/incidents/stats'),
+};

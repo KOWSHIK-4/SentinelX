@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/auth.routes';
+import incidentRoutes from './modules/incidents/incident.routes';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/incidents', incidentRoutes);
 
 app.use(errorHandler);
 
