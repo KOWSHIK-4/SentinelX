@@ -8,6 +8,7 @@ import authRoutes from './modules/auth/auth.routes';
 import incidentRoutes from './modules/incidents/incident.routes';
 import assetRoutes from './modules/assets/asset.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
+import reportRoutes from './modules/reports/reports.routes';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.use(errorHandler);
 
