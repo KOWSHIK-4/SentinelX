@@ -14,6 +14,7 @@ import { Reports } from '@/pages/Reports';
 import { Team } from '@/pages/Team';
 import { Settings } from '@/pages/Settings';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const queryClient = new QueryClient();
 
@@ -26,14 +27,16 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<AppLayout />} errorElement={<ErrorPage />}>
-              <Route index element={<Dashboard />} />
-              <Route path="incidents" element={<Incidents />} />
-              <Route path="assets" element={<Assets />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="team" element={<Team />} />
-              <Route path="settings" element={<Settings />} />
+            <Route path="/dashboard" element={<ProtectedRoute />}>
+              <Route element={<AppLayout />} errorElement={<ErrorPage />}>
+                <Route index element={<Dashboard />} />
+                <Route path="incidents" element={<Incidents />} />
+                <Route path="assets" element={<Assets />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="team" element={<Team />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

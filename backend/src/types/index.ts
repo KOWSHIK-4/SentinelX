@@ -9,6 +9,27 @@ export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
+export interface RoleInfo {
+  id: string;
+  name: string;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles?: RoleInfo[];
+  isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface AuthResponse {
+  user: UserResponse;
+  token: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;

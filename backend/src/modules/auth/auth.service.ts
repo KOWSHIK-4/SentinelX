@@ -29,13 +29,29 @@ export class AuthService {
       },
     });
 
+    const viewerRole = await prisma.role.findUnique({ where: { name: 'Viewer' } });
+    if (viewerRole) {
+      await prisma.userRole.create({
+        data: { userId: user.id, roleId: viewerRole.id },
+      });
+    }
+
     const token = generateToken({ userId: user.id, email: user.email });
 
-    return { user, token };
+    const roles = viewerRole ? [{ id: viewerRole.id, name: viewerRole.name }] : [];
+
+    return { user: { ...user, roles }, token };
   }
 
   async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        roles: {
+          include: { role: true },
+        },
+      },
+    });
 
     if (!user) {
       throw new AppError('Invalid email or password.', 401);
@@ -59,6 +75,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        roles: user.roles.map((ur) => ({ id: ur.role.id, name: ur.role.name })),
       },
       token,
     };
@@ -67,14 +84,10 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        roles: {
+          include: { role: true },
+        },
       },
     });
 
@@ -82,6 +95,15 @@ export class AuthService {
       throw new AppError('User not found.', 404);
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isActive: user.isActive,
+      roles: user.roles.map((ur) => ({ id: ur.role.id, name: ur.role.name })),
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

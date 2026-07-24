@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/lib/api';
 
 export function Register() {
   const [firstName, setFirstName] = useState('');
@@ -23,23 +24,11 @@ export function Register() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || data.message || 'Registration failed. Please try again.');
-        return;
-      }
-
+      const data = await authApi.register(firstName, lastName, email, password);
       setAuth(data.data.user, data.data.token);
       navigate('/dashboard');
-    } catch {
-      setError('Network error. Please check your connection and try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
