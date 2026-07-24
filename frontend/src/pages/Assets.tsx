@@ -183,7 +183,7 @@ export function Assets() {
                 placeholder="All types"
                 options={assetTypeOptions}
                 value={assetType}
-                onChange={(e) => setAssetType(e.target.value)}
+                onValueChange={setAssetType}
               />
             </div>
             <div className="w-[160px]">
@@ -191,7 +191,7 @@ export function Assets() {
                 placeholder="All statuses"
                 options={statusOptions}
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onValueChange={setStatus}
               />
             </div>
             {hasFilters && (

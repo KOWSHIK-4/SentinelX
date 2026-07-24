@@ -102,11 +102,11 @@ export function IncidentForm({ open, incident, onSave, onCancel, loading }: Inci
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="severity">Severity</Label>
-              <Select id="severity" options={severityOptions} value={severity} onChange={(e) => setSeverity(e.target.value)} />
+              <Select id="severity" options={severityOptions} value={severity} onValueChange={setSeverity} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select id="status" options={statusOptions} value={status} onChange={(e) => setStatus(e.target.value)} />
+              <Select id="status" options={statusOptions} value={status} onValueChange={setStatus} />
             </div>
           </div>
 

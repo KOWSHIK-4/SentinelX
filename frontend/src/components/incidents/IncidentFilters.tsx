@@ -37,7 +37,7 @@ export function IncidentFilters({ filters, onFilterChange }: IncidentFiltersProp
           placeholder="All statuses"
           options={statusOptions}
           value={filters.status}
-          onChange={(e) => onFilterChange({ ...filters, status: e.target.value })}
+          onValueChange={(value) => onFilterChange({ ...filters, status: value })}
         />
       </div>
       <div className="w-[160px]">
@@ -45,7 +45,7 @@ export function IncidentFilters({ filters, onFilterChange }: IncidentFiltersProp
           placeholder="All severities"
           options={severityOptions}
           value={filters.severity}
-          onChange={(e) => onFilterChange({ ...filters, severity: e.target.value })}
+          onValueChange={(value) => onFilterChange({ ...filters, severity: value })}
         />
       </div>
       {hasFilters && (

@@ -61,6 +61,11 @@
   }
 }
 
+select option {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+}
+
 @layer utilities {
   .gradient-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500;

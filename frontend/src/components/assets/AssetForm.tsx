@@ -134,7 +134,7 @@ export function AssetForm({ open, asset, onSave, onCancel, loading }: AssetFormP
             </div>
             <div className="space-y-2">
               <Label htmlFor="assetType">Asset Type</Label>
-              <Select id="assetType" options={assetTypeOptions} value={assetType} onChange={(e) => setAssetType(e.target.value)} />
+              <Select id="assetType" options={assetTypeOptions} value={assetType} onValueChange={setAssetType} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="operatingSystem">Operating System</Label>
@@ -154,11 +154,11 @@ export function AssetForm({ open, asset, onSave, onCancel, loading }: AssetFormP
             </div>
             <div className="space-y-2">
               <Label htmlFor="criticality">Criticality</Label>
-              <Select id="criticality" options={criticalityOptions} value={criticality} onChange={(e) => setCriticality(e.target.value)} />
+              <Select id="criticality" options={criticalityOptions} value={criticality} onValueChange={setCriticality} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select id="status" options={statusOptions} value={status} onChange={(e) => setStatus(e.target.value)} />
+              <Select id="status" options={statusOptions} value={status} onValueChange={setStatus} />
             </div>
           </div>
           <div className="space-y-2">
