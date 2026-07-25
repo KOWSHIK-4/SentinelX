@@ -1,6 +1,8 @@
-import { Prisma, $Enums } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+
+import type { $Enums } from '@prisma/client';
 
 interface ReportFilters {
   startDate?: string;

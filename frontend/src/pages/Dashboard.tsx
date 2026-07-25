@@ -362,7 +362,7 @@ export function Dashboard() {
                       {log.userName} · {formatRelativeTime(log.createdAt)}
                     </p>
                   </div>
-                  <span className={auditSeverityColors[log.severity] || 'text-muted-foreground' + ' inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold shrink-0'}>
+                  <span className={`${auditSeverityColors[log.severity] || 'text-muted-foreground'} inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold shrink-0`}>
                     {log.severity}
                   </span>
                 </div>

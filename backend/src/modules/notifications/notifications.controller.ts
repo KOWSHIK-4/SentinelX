@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { NotificationService } from './notifications.service';
 import { AuthRequest, ApiResponse } from '../../types';
+import { createAuditLog } from '../audit/audit.service';
 
 const notificationService = new NotificationService();
 
@@ -46,6 +47,7 @@ export async function markAllNotificationsRead(req: AuthRequest, res: Response<A
 export async function deleteNotification(req: AuthRequest, res: Response<ApiResponse>, next: NextFunction) {
   try {
     await notificationService.delete(req.params.id, req.user!.userId);
+    await createAuditLog(req, 'Notification Deleted', 'Notification', req.params.id, 'Notification deleted', 'Info');
     res.json({ success: true, message: 'Notification deleted successfully.' });
   } catch (error) {
     next(error);

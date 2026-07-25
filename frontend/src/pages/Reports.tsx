@@ -192,8 +192,67 @@ export function Reports() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  function generateCsvContent(): string {
+    if (activeTab === 'incidents' || activeTab === 'critical-incidents') {
+      if (!incidentsReport) return '';
+      const headers = ['Title', 'Description', 'Severity', 'Status', 'Assigned To', 'Created'];
+      const rows = incidentsReport.data.map((inc) => [
+        inc.title,
+        inc.description.replace(/"/g, '""'),
+        inc.severity,
+        inc.status,
+        inc.assignedUser ? `${inc.assignedUser.firstName} ${inc.assignedUser.lastName}` : '',
+        inc.createdAt,
+      ]);
+      return [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
+    }
+    if (activeTab === 'assets') {
+      if (!assetsReport) return '';
+      const headers = ['Asset Name', 'Type', 'Criticality', 'Status', 'IP Address', 'Location', 'Owner'];
+      const rows = assetsReport.data.map((a) => [
+        a.assetName,
+        a.assetType,
+        a.criticality,
+        a.status,
+        a.ipAddress || '',
+        a.location || '',
+        a.owner || '',
+      ]);
+      return [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
+    }
+    if (activeTab === 'executive-summary') {
+      if (!summaryReport) return '';
+      const headers = ['Metric', 'Value'];
+      const rows = [
+        ['Total Incidents', String(summaryReport.totalIncidents)],
+        ['Open Incidents', String(summaryReport.openIncidents)],
+        ['Critical Incidents', String(summaryReport.criticalIncidents)],
+        ['Total Assets', String(summaryReport.totalAssets)],
+        ['Active Assets', String(summaryReport.activeAssets)],
+        ['Critical Assets', String(summaryReport.criticalAssets)],
+      ];
+      return [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
+    }
+    return '';
+  }
+
   const handleExport = async (exportFormat: 'pdf' | 'csv') => {
     try {
+      if (exportFormat === 'csv') {
+        const content = generateCsvContent();
+        if (!content) {
+          setError('No data available to export.');
+          return;
+        }
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${activeTab}-report.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
       const exportFilters: ReportFilters = {};
       if (filters.startDate) exportFilters.startDate = filters.startDate;
       if (filters.endDate) exportFilters.endDate = filters.endDate;
@@ -201,16 +260,15 @@ export function Reports() {
       if (filters.status) exportFilters.status = filters.status;
       if (filters.assetType) exportFilters.assetType = filters.assetType;
       const res = await reportsApi.export({
-        type: activeTab, format: exportFormat,
+        type: activeTab, format: 'pdf',
         filters: Object.keys(exportFilters).length > 0 ? exportFilters : undefined,
       });
       const content = JSON.stringify(res.data, null, 2);
-      const contentType = exportFormat === 'csv' ? 'text/csv;charset=utf-8' : 'application/json';
-      const blob = new Blob([content], { type: contentType });
+      const blob = new Blob([content], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${activeTab}-report.${exportFormat}`;
+      a.download = `${activeTab}-report.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {

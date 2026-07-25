@@ -539,7 +539,7 @@ export function Settings() {
 
       <ToastViewport />
       {toasts.map((t) => (
-        <Toast key={t.id} variant={t.variant as 'default' | 'destructive' | undefined}>
+        <Toast key={t.id} variant={t.variant as 'default' | 'success' | 'destructive' | undefined}>
           <div className="grid gap-1">
             <ToastTitle>{t.title}</ToastTitle>
             {t.description && <ToastDescription>{t.description}</ToastDescription>}

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthService } from './auth.service';
 import { AuthRequest } from '../../types';
 import { ApiResponse } from '../../types';
+import { createAuditLog } from '../audit/audit.service';
 
 const authService = new AuthService();
 
@@ -40,6 +41,12 @@ export async function login(req: AuthRequest, res: Response<ApiResponse>, next: 
   try {
     const { email, password } = req.body;
     const result = await authService.login(email, password);
+
+    await createAuditLog(
+      req, 'Login', 'Auth', null,
+      `User logged in: ${result.user.email}`, 'Info',
+      { userId: result.user.id, userName: result.user.email },
+    );
 
     res.json({
       success: true,

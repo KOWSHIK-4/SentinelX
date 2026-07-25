@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 
+import type { $Enums } from '@prisma/client';
+
 export class AssetService {
   async create(data: {
     assetName: string;
@@ -21,12 +23,12 @@ export class AssetService {
         assetName: data.assetName,
         hostname: data.hostname ?? null,
         ipAddress: data.ipAddress ?? null,
-        assetType: (data.assetType as Prisma.EnumAssetTypeFilter['equals']) || 'OTHER',
+        assetType: (data.assetType as $Enums.AssetType) || 'OTHER',
         operatingSystem: data.operatingSystem ?? null,
         owner: data.owner ?? null,
         department: data.department ?? null,
-        criticality: (data.criticality as Prisma.EnumCriticalityFilter['equals']) || 'MEDIUM',
-        status: (data.status as Prisma.EnumAssetStatusFilter['equals']) || 'ACTIVE',
+        criticality: (data.criticality as $Enums.Criticality) || 'MEDIUM',
+        status: (data.status as $Enums.AssetStatus) || 'ACTIVE',
         location: data.location ?? null,
         description: data.description ?? null,
       },
@@ -57,15 +59,15 @@ export class AssetService {
     }
 
     if (query.assetType) {
-      where.assetType = query.assetType as Prisma.EnumAssetTypeFilter['equals'];
+      where.assetType = query.assetType as $Enums.AssetType;
     }
 
     if (query.status) {
-      where.status = query.status as Prisma.EnumAssetStatusFilter['equals'];
+      where.status = query.status as $Enums.AssetStatus;
     }
 
     if (query.criticality) {
-      where.criticality = query.criticality as Prisma.EnumCriticalityFilter['equals'];
+      where.criticality = query.criticality as $Enums.Criticality;
     }
 
     const orderBy: Prisma.AssetOrderByWithRelationInput = {
@@ -146,12 +148,12 @@ export class AssetService {
     if (data.assetName !== undefined) updateData.assetName = data.assetName;
     if (data.hostname !== undefined) updateData.hostname = data.hostname;
     if (data.ipAddress !== undefined) updateData.ipAddress = data.ipAddress;
-    if (data.assetType !== undefined) updateData.assetType = data.assetType as Prisma.EnumAssetTypeFilter['equals'];
+    if (data.assetType !== undefined) updateData.assetType = data.assetType as $Enums.AssetType;
     if (data.operatingSystem !== undefined) updateData.operatingSystem = data.operatingSystem;
     if (data.owner !== undefined) updateData.owner = data.owner;
     if (data.department !== undefined) updateData.department = data.department;
-    if (data.criticality !== undefined) updateData.criticality = data.criticality as Prisma.EnumCriticalityFilter['equals'];
-    if (data.status !== undefined) updateData.status = data.status as Prisma.EnumAssetStatusFilter['equals'];
+    if (data.criticality !== undefined) updateData.criticality = data.criticality as $Enums.Criticality;
+    if (data.status !== undefined) updateData.status = data.status as $Enums.AssetStatus;
     if (data.location !== undefined) updateData.location = data.location;
     if (data.description !== undefined) updateData.description = data.description;
 

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
+import { env } from '../config/env';
 import { ApiResponse } from '../types';
 
 export class AppError extends Error {
@@ -72,7 +73,7 @@ export function errorHandler(
     return;
   }
 
-  if (process.env.NODE_ENV === 'development') {
+  if (env.NODE_ENV === 'development') {
     console.error('Unhandled error:', {
       name: err.name,
       message: err.message,

@@ -86,6 +86,12 @@ export async function api<T = unknown>(endpoint: string, options: ApiOptions = {
     headers,
   });
 
+  if (res.status === 401 && !skipAuth) {
+    useAuthStore.getState().logout();
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+
   const data = await res.json();
 
   if (!res.ok) {

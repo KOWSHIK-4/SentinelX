@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import type { AuthRequest } from '../../types';
 
 interface AuditQuery {
   page?: number;
@@ -10,6 +11,33 @@ interface AuditQuery {
   userId?: string;
   startDate?: string;
   endDate?: string;
+}
+
+export function createAuditLog(
+  req: AuthRequest,
+  action: string,
+  resource: string,
+  resourceId: string | null,
+  description?: string,
+  severity: string = 'Info',
+  userOverride?: { userId: string; userName: string },
+) {
+  const userInfo = userOverride
+    ? { userId: userOverride.userId, userName: userOverride.userName }
+    : { userId: req.user?.userId || 'unknown', userName: req.user?.email || 'unknown' };
+
+  return prisma.auditLog.create({
+    data: {
+      ...userInfo,
+      action,
+      resource,
+      resourceId,
+      description: description || null,
+      ipAddress: req.ip || null,
+      userAgent: req.headers['user-agent'] || null,
+      severity,
+    },
+  });
 }
 
 export class AuditService {

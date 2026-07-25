@@ -1,4 +1,4 @@
-import { Prisma, $Enums } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import type { AuthRequest } from '../../types';
@@ -18,6 +18,8 @@ const incidentInclude = {
     },
   },
 } as const;
+
+import type { $Enums } from '@prisma/client';
 
 export class IncidentService {
   async create(req: AuthRequest, data: {
@@ -148,8 +150,8 @@ export class IncidentService {
 
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
-    if (data.status !== undefined) updateData.status = data.status as Prisma.EnumIncidentStatusFilter['equals'];
-    if (data.severity !== undefined) updateData.severity = data.severity as Prisma.EnumIncidentSeverityFilter['equals'];
+    if (data.status !== undefined) updateData.status = data.status as $Enums.IncidentStatus;
+    if (data.severity !== undefined) updateData.severity = data.severity as $Enums.IncidentSeverity;
     if (data.assignedTo !== undefined) updateData.assignedTo = data.assignedTo;
 
     if (data.assetIds !== undefined) {
