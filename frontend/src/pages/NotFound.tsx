@@ -2,8 +2,10 @@ import { motion } from 'framer-motion';
 import { ShieldOff, Home, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function NotFound() {
+  useDocumentTitle('Page Not Found');
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <motion.div

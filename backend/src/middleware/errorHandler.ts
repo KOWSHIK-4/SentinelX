@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 import { ApiResponse } from '../types';
 
 export class AppError extends Error {
@@ -11,6 +12,23 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.isOperational = true;
     Object.setPrototypeOf(this, AppError.prototype);
+  }
+}
+
+function isPrismaError(err: unknown): err is Prisma.PrismaClientKnownRequestError {
+  return err instanceof Prisma.PrismaClientKnownRequestError;
+}
+
+function handlePrismaError(err: Prisma.PrismaClientKnownRequestError): { statusCode: number; message: string } {
+  switch (err.code) {
+    case 'P2002':
+      return { statusCode: 409, message: 'A record with this value already exists.' };
+    case 'P2025':
+      return { statusCode: 404, message: 'Record not found.' };
+    case 'P2003':
+      return { statusCode: 400, message: 'Referenced record does not exist.' };
+    default:
+      return { statusCode: 500, message: 'Database error occurred.' };
   }
 }
 
@@ -37,7 +55,32 @@ export function errorHandler(
     return;
   }
 
-  console.error('Unhandled error:', err);
+  if (isPrismaError(err)) {
+    const { statusCode, message } = handlePrismaError(err);
+    res.status(statusCode).json({
+      success: false,
+      error: message,
+    });
+    return;
+  }
+
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    res.status(401).json({
+      success: false,
+      error: 'Invalid or expired token.',
+    });
+    return;
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Unhandled error:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    });
+  } else {
+    console.error('Unhandled error:', err.message);
+  }
 
   res.status(500).json({
     success: false,

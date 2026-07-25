@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Activity,
   AlertTriangle,
@@ -77,6 +78,7 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 export function Analytics() {
+  useDocumentTitle('Analytics');
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [incidents, setIncidents] = useState<AnalyticsIncidents | null>(null);
   const [assets, setAssets] = useState<AnalyticsAssets | null>(null);

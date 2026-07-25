@@ -2,8 +2,10 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouteError, useNavigate } from 'react-router-dom';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function ErrorPage() {
+  useDocumentTitle('Error');
   const error = useRouteError() as { statusText?: string; message?: string };
   const navigate = useNavigate();
 

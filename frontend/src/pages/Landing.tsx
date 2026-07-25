@@ -8,8 +8,10 @@ import { TechStack } from '@/components/landing/TechStack';
 import { Screenshots } from '@/components/landing/Screenshots';
 import { FAQ } from '@/components/landing/FAQ';
 import { Contact } from '@/components/landing/Contact';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function Landing() {
+  useDocumentTitle('');
   return (
     <div className="min-h-screen bg-background">
       <Header />

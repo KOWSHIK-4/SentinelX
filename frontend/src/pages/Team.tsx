@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, RefreshCw, Search, X } from 'lucide-react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,6 +132,7 @@ function TeamMemberForm({ open, member, onSave, onCancel, loading }: TeamMemberF
 }
 
 export function Team() {
+  useDocumentTitle('Team');
   const user = useAuthStore((s) => s.user);
   const roleName = user?.roles?.[0]?.name || '';
   const canManage = roleName === 'Admin';

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Server, RefreshCw } from 'lucide-react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ const statusFilterOptions = [
 const limitOptions = [10, 25, 50, 100];
 
 export function Assets() {
+  useDocumentTitle('Assets');
   const user = useAuthStore((s) => s.user);
   const roleName = user?.roles?.[0]?.name || '';
   const canCreate = roleName === 'Admin' || roleName === 'Analyst';

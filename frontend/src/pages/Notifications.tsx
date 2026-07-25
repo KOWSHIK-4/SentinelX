@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Bell,
   BellOff,
@@ -49,6 +50,7 @@ const severityFilters = [
 ];
 
 export function Notifications() {
+  useDocumentTitle('Notifications');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/lib/api';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function Login() {
+  useDocumentTitle('Sign In');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

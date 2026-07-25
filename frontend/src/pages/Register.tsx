@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/lib/api';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export function Register() {
+  useDocumentTitle('Create Account');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');

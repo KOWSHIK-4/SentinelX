@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, AlertTriangle, Shield, Server, RefreshCw, Monitor, Wrench, Bell, ScrollText, CheckCircle2 } from 'lucide-react';
@@ -75,6 +76,7 @@ const WidgetCard = memo(function WidgetCard({ title, children, className }: {
 });
 
 export function Dashboard() {
+  useDocumentTitle('Dashboard');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [assetStats, setAssetStats] = useState<AssetDashboardStats | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);

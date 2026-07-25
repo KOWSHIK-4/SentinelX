@@ -11,6 +11,7 @@ import {
   Upload,
   AlertTriangle,
  } from 'lucide-react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,6 +105,7 @@ function SystemStatusBadge({ status, label }: { status: string; label: string })
 }
 
 export function Settings() {
+  useDocumentTitle('Settings');
   const [activeTab, setActiveTab] = useState<TabId>('organization');
   const [settings, setSettings] = useState<SettingsState | null>(null);
   const [originalSettings, setOriginalSettings] = useState<string>('');

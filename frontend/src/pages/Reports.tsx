@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Calendar,
 } from 'lucide-react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -142,6 +143,7 @@ function buildFilterParams(filters: Filters): Record<string, string> {
 }
 
 export function Reports() {
+  useDocumentTitle('Reports');
   const [activeTab, setActiveTab] = useState<ReportTab>('incidents');
   const [filters, setFilters] = useState<Filters>({
     startDate: '', endDate: '', severity: '', status: '', assetType: '',
