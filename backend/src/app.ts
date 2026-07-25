@@ -1,13 +1,14 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { swaggerSpec } from './config/swagger';
 import { testDatabaseConnection } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
+import { correlationId } from './middleware/correlationId';
 import authRoutes from './modules/auth/auth.routes';
 import incidentRoutes from './modules/incidents/incident.routes';
 import assetRoutes from './modules/assets/asset.routes';
@@ -44,7 +45,7 @@ app.use(
 
 app.use(express.json({ limit: '10kb' }));
 
-app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(correlationId);
 
 app.use(
   rateLimit({
@@ -87,6 +88,9 @@ app.use('/api/team', teamRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit', auditRoutes);
+
+const uploadsPath = path.resolve(process.cwd(), env.UPLOAD_DIR);
+app.use('/api/uploads', express.static(uploadsPath));
 
 app.use(errorHandler);
 

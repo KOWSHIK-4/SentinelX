@@ -703,6 +703,26 @@ export const settingsApi = {
 
   getSystemInfo: () =>
     api<SystemInfoResponse>('/settings/system', { cacheTTL: 60000 }),
+
+  uploadLogo: async (file: File): Promise<LogoUploadResponse> => {
+    const token = useAuthStore.getState().token;
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const res = await fetch(`${BASE_URL}/settings/logo`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to upload logo.');
+    }
+    return data;
+  },
 };
 
 export interface Notification {
@@ -764,6 +784,12 @@ export const notificationApi = {
   },
 };
 
+export interface LogoUploadResponse {
+  success: boolean;
+  data: { logoUrl: string };
+  message: string;
+}
+
 export const reportsApi = {
   getIncidents: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
@@ -786,6 +812,25 @@ export const reportsApi = {
       body: JSON.stringify(data),
       useCache: false,
     }),
+
+  downloadExport: async (data: { type: string; format: string; filters?: ReportFilters }): Promise<Blob> => {
+    const token = useAuthStore.getState().token;
+    const res = await fetch(`${BASE_URL}/reports/export`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Failed to export report.' }));
+      throw new Error(err.error || 'Failed to export report.');
+    }
+
+    return res.blob();
+  },
 };
 
 export interface AuditLog {

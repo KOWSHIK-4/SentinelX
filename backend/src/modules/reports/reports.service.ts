@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { generateIncidentPDF, generateAssetPDF, generateExecutiveSummaryPDF } from '../../utils/pdf';
 
 import type { $Enums } from '@prisma/client';
 
@@ -202,21 +203,97 @@ export class ReportsService {
   }
 
   async exportReport(type: string, format: string, filters: ReportFilters = {}) {
+    const settings = await prisma.settings.findFirst();
+    const orgName = settings?.organizationName || 'SentinelX';
+    const meta = {
+      title: '',
+      organizationName: orgName,
+      generatedAt: new Date().toISOString(),
+      filters: Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined && v !== '')) as Record<string, string>,
+    };
+
     switch (type) {
       case 'incidents': {
         const report = await this.getIncidentsReport(filters);
+        if (format === 'pdf') {
+          meta.title = 'Incident Report';
+          const pdfData = {
+            data: report.data.map((inc) => ({
+              title: inc.title,
+              severity: inc.severity,
+              status: inc.status,
+              createdAt: inc.createdAt instanceof Date ? inc.createdAt.toISOString() : String(inc.createdAt),
+              assignedUser: inc.assignedUser ? { firstName: inc.assignedUser.firstName, lastName: inc.assignedUser.lastName } : null,
+            })),
+            total: report.total,
+            severityBreakdown: report.severityBreakdown,
+            statusBreakdown: report.statusBreakdown,
+          };
+          return generateIncidentPDF(pdfData, meta);
+        }
         return { type, format, data: report, exportedAt: new Date().toISOString() };
       }
       case 'assets': {
         const report = await this.getAssetsReport(filters);
+        if (format === 'pdf') {
+          meta.title = 'Asset Report';
+          const pdfData = {
+            data: report.data.map((a) => ({
+              assetName: a.assetName,
+              assetType: a.assetType,
+              criticality: a.criticality,
+              status: a.status,
+              ipAddress: a.ipAddress,
+            })),
+            total: report.total,
+            typeBreakdown: report.typeBreakdown,
+            criticalityBreakdown: report.criticalityBreakdown,
+          };
+          return generateAssetPDF(pdfData, meta);
+        }
         return { type, format, data: report, exportedAt: new Date().toISOString() };
       }
       case 'critical-incidents': {
         const report = await this.getIncidentsReport({ ...filters, severity: 'CRITICAL' });
+        if (format === 'pdf') {
+          meta.title = 'Critical Incident Report';
+          const pdfData = {
+            data: report.data.map((inc) => ({
+              title: inc.title,
+              severity: inc.severity,
+              status: inc.status,
+              createdAt: inc.createdAt instanceof Date ? inc.createdAt.toISOString() : String(inc.createdAt),
+              assignedUser: inc.assignedUser ? { firstName: inc.assignedUser.firstName, lastName: inc.assignedUser.lastName } : null,
+            })),
+            total: report.total,
+            severityBreakdown: report.severityBreakdown,
+            statusBreakdown: report.statusBreakdown,
+          };
+          return generateIncidentPDF(pdfData, meta);
+        }
         return { type, format, data: report, exportedAt: new Date().toISOString() };
       }
       case 'executive-summary': {
         const report = await this.getSummaryReport(filters);
+        if (format === 'pdf') {
+          meta.title = 'Executive Summary';
+          const pdfData = {
+            totalIncidents: report.totalIncidents,
+            openIncidents: report.openIncidents,
+            criticalIncidents: report.criticalIncidents,
+            totalAssets: report.totalAssets,
+            activeAssets: report.activeAssets,
+            criticalAssets: report.criticalAssets,
+            recentIncidents: report.recentIncidents.map((inc) => ({
+              title: inc.title,
+              severity: inc.severity,
+              status: inc.status,
+              createdAt: inc.createdAt instanceof Date ? inc.createdAt.toISOString() : String(inc.createdAt),
+              createdBy: { firstName: inc.createdBy.firstName, lastName: inc.createdBy.lastName },
+            })),
+          };
+          return generateExecutiveSummaryPDF(pdfData, meta);
+        }
         return { type, format, data: report, exportedAt: new Date().toISOString() };
       }
       default:

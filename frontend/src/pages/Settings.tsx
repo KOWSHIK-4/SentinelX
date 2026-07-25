@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Building2,
   Palette,
@@ -113,7 +113,9 @@ export function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const { toasts, toast, dismiss } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasUnsavedChanges = settings && originalSettings && JSON.stringify(settings) !== originalSettings;
 
@@ -181,8 +183,38 @@ export function Settings() {
     }
   };
 
-  const handleLogoUpload = () => {
-    toast({ title: 'Coming Soon', description: 'Logo upload via file picker will be available in a future release.' });
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: 'Invalid File', description: 'Only PNG, JPG, and SVG files are allowed.', variant: 'destructive' });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File Too Large', description: 'Maximum file size is 2 MB.', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const res = await settingsApi.uploadLogo(file);
+      if (settings) {
+        setSettings({ ...settings, logoUrl: res.data.logoUrl });
+      }
+      toast({ title: 'Success', description: res.message || 'Logo uploaded successfully.', variant: 'success' });
+    } catch (err) {
+      toast({
+        title: 'Upload Failed',
+        description: err instanceof Error ? err.message : 'Failed to upload logo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   if (loading) {
@@ -309,8 +341,21 @@ export function Settings() {
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleLogoUpload}>
-              <Upload className="h-4 w-4 mr-1" /> Upload
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg,.svg"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingLogo}
+            >
+              <Upload className={cn('h-4 w-4 mr-1', uploadingLogo && 'animate-spin')} />
+              {uploadingLogo ? 'Uploading...' : 'Upload'}
             </Button>
             {settings.logoUrl && (
               <Button variant="ghost" size="sm" onClick={() => updateField('logoUrl', null)}>

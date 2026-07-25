@@ -13,6 +13,8 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   API_VERSION: z.string().default('1.0.0'),
+  CLOUDINARY_URL: z.string().optional(),
+  UPLOAD_DIR: z.string().default('uploads'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -259,16 +259,14 @@ export function Reports() {
       if (filters.severity) exportFilters.severity = filters.severity;
       if (filters.status) exportFilters.status = filters.status;
       if (filters.assetType) exportFilters.assetType = filters.assetType;
-      const res = await reportsApi.export({
+      const blob = await reportsApi.downloadExport({
         type: activeTab, format: 'pdf',
         filters: Object.keys(exportFilters).length > 0 ? exportFilters : undefined,
       });
-      const content = JSON.stringify(res.data, null, 2);
-      const blob = new Blob([content], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${activeTab}-report.json`;
+      a.download = `${activeTab}-report-${Date.now()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
