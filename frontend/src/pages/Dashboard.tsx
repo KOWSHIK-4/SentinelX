@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { incidentApi, assetApi, notificationApi, auditApi, type DashboardStats, type AssetDashboardStats, type Notification, type AuditLog } from '@/lib/api';
+import { incidentApi, assetApi, notificationApi, auditApi, type DashboardStats, type AssetDashboardStats, type AuditLog, type Notification as ApiNotification } from '@/lib/api';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
 import { useAutoRefresh } from '@/lib/utils';
 
@@ -79,7 +79,7 @@ export function Dashboard() {
   useDocumentTitle('Dashboard');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [assetStats, setAssetStats] = useState<AssetDashboardStats | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,17 +87,21 @@ export function Dashboard() {
 
   const fetchAllData = useCallback(async () => {
     setError('');
+    setLoading(true);
     try {
-      const [incidentRes, assetRes, notifRes, auditRes] = await Promise.all([
+      const [incidentRes, assetRes] = await Promise.all([
         incidentApi.getDashboardStats(),
         assetApi.getDashboardStats(),
-        notificationApi.list().catch(() => ({ data: { data: [] as Notification[] } })),
-        auditApi.list({ limit: '5' }).catch(() => ({ data: [] as AuditLog[], pagination: { total: 0 } })),
       ]);
       setStats(incidentRes.data);
       setAssetStats(assetRes.data);
-      setNotifications((notifRes as { data: Notification[] }).data?.slice(0, 5) || []);
-      setAuditLogs((auditRes as { data: AuditLog[] }).data || []);
+
+      const notifRes = await notificationApi.list().catch(() => null);
+      setNotifications(notifRes?.data?.slice(0, 5) || []);
+
+      const auditRes = await auditApi.list({ limit: '5' }).catch(() => null);
+      setAuditLogs(auditRes?.data || []);
+
       setSystemHealth({ database: 'healthy', api: 'healthy' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard.');

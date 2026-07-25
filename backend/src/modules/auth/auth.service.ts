@@ -69,6 +69,11 @@ export class AuthService {
 
     const token = generateToken({ userId: user.id, email: user.email });
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
+
     return {
       user: {
         id: user.id,

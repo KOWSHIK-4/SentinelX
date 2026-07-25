@@ -6,8 +6,8 @@ import { GlobalSearch } from './GlobalSearch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNotificationStore } from '@/store/notificationStore';
-import { useAuthStore } from '@/store/authStore';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { notificationApi } from '@/lib/api';
 
 function ScrollToTop() {
   const [visible, setVisible] = useState(false);
@@ -32,19 +32,13 @@ function ScrollToTop() {
 export function AppLayout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const { unreadCount, setUnreadCount } = useNotificationStore();
-  const token = useAuthStore((s) => s.token);
 
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const res = await fetch('/api/notifications', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && Array.isArray(data.data)) {
-            setUnreadCount(data.data.filter((n: { isRead: boolean }) => !n.isRead).length);
-          }
+        const res = await notificationApi.list();
+        if (res.success && Array.isArray(res.data)) {
+          setUnreadCount(res.data.filter((n) => !n.isRead).length);
         }
       } catch {
         // silently fail
@@ -53,7 +47,7 @@ export function AppLayout() {
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
-  }, [token, setUnreadCount]);
+  }, [setUnreadCount]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

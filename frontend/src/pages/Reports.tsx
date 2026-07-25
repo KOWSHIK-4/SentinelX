@@ -23,6 +23,7 @@ import {
   type IncidentsReport,
   type AssetsReport,
   type SummaryReport,
+  type ReportFilters,
   type Incident,
   type Asset,
 } from '@/lib/api';
@@ -191,18 +192,25 @@ export function Reports() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleExport = async (format: 'pdf' | 'csv') => {
+  const handleExport = async (exportFormat: 'pdf' | 'csv') => {
     try {
-      const params = buildFilterParams(filters);
+      const exportFilters: ReportFilters = {};
+      if (filters.startDate) exportFilters.startDate = filters.startDate;
+      if (filters.endDate) exportFilters.endDate = filters.endDate;
+      if (filters.severity) exportFilters.severity = filters.severity;
+      if (filters.status) exportFilters.status = filters.status;
+      if (filters.assetType) exportFilters.assetType = filters.assetType;
       const res = await reportsApi.export({
-        type: activeTab, format,
-        filters: Object.keys(params).length > 0 ? params : undefined,
+        type: activeTab, format: exportFormat,
+        filters: Object.keys(exportFilters).length > 0 ? exportFilters : undefined,
       });
-      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: format === 'csv' ? 'text/csv' : 'application/pdf' });
+      const content = JSON.stringify(res.data, null, 2);
+      const contentType = exportFormat === 'csv' ? 'text/csv;charset=utf-8' : 'application/json';
+      const blob = new Blob([content], { type: contentType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${activeTab}-report.${format}`;
+      a.download = `${activeTab}-report.${exportFormat}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {

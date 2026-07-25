@@ -39,8 +39,8 @@ async function main() {
       });
     });
 
-    process.on('unhandledRejection', (reason) => {
-      console.error('Unhandled Rejection:', reason);
+    process.on('unhandledRejection', (reason: Error | unknown) => {
+      console.error('Unhandled Rejection:', reason instanceof Error ? reason.message : reason);
     });
 
     process.on('uncaughtException', (error) => {
