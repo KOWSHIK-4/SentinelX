@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { IncidentFilters } from '@/components/incidents/IncidentFilters';
+import { Select } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { IncidentForm } from '@/components/incidents/IncidentForm';
 import { IncidentDetail } from '@/components/incidents/IncidentDetail';
 import { ConfirmDialog } from '@/components/incidents/ConfirmDialog';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell, TableSkeleton, TableEmptyState } from '@/components/ui/table';
+import { Pagination } from '@/components/ui/pagination';
 import { incidentApi, type Incident } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -26,6 +28,24 @@ const statusBadgeVariants: Record<string, 'destructive' | 'warning' | 'success' 
   CLOSED: 'default',
 };
 
+const statusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: 'OPEN', label: 'Open' },
+  { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'RESOLVED', label: 'Resolved' },
+  { value: 'CLOSED', label: 'Closed' },
+];
+
+const severityFilterOptions = [
+  { value: '', label: 'All Severities' },
+  { value: 'CRITICAL', label: 'Critical' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'LOW', label: 'Low' },
+];
+
+const limitOptions = [10, 25, 50, 100];
+
 export function Incidents() {
   const user = useAuthStore((s) => s.user);
   const roleName = user?.roles?.[0]?.name || '';
@@ -40,6 +60,9 @@ export function Incidents() {
 
   const [filters, setFilters] = useState({ search: '', status: '', severity: '' });
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const [showForm, setShowForm] = useState(false);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
@@ -52,11 +75,10 @@ export function Incidents() {
     setLoading(true);
     setError('');
     try {
-      const params: Record<string, string> = { page: String(page), limit: '10' };
+      const params: Record<string, string> = { page: String(page), limit: String(limit) };
       if (filters.search) params.search = filters.search;
       if (filters.status) params.status = filters.status;
       if (filters.severity) params.severity = filters.severity;
-
       const res = await incidentApi.list(params);
       setIncidents(res.data);
       setPagination(res.pagination);
@@ -65,15 +87,10 @@ export function Incidents() {
     } finally {
       setLoading(false);
     }
-  }, [page, filters]);
+  }, [page, limit, filters]);
 
-  useEffect(() => {
-    fetchIncidents();
-  }, [fetchIncidents]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
+  useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
+  useEffect(() => { setPage(1); }, [filters, limit]);
 
   const handleCreate = async (data: { title: string; description: string; status: string; severity: string }) => {
     setSaving(true);
@@ -83,9 +100,7 @@ export function Incidents() {
       fetchIncidents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create incident.');
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const handleUpdate = async (data: { title: string; description: string; status: string; severity: string }) => {
@@ -98,9 +113,7 @@ export function Incidents() {
       fetchIncidents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update incident.');
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async () => {
@@ -112,151 +125,163 @@ export function Incidents() {
       fetchIncidents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete incident.');
-    } finally {
-      setDeleting(false);
+    } finally { setDeleting(false); }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
     }
   };
 
+  const sortedIncidents = [...incidents].sort((a, b) => {
+    if (!sortField) return 0;
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    const aVal = String(a[sortField as keyof Incident] ?? '');
+    const bVal = String(b[sortField as keyof Incident] ?? '');
+    return aVal.localeCompare(bVal) * dir;
+  });
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
           <p className="text-muted-foreground mt-1">Track and manage security incidents.</p>
         </div>
-        {canCreate && (
-          <Button onClick={() => { setEditingIncident(null); setShowForm(true); }} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Incident
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchIncidents} disabled={loading} className="gap-1">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-        )}
+          {canCreate && (
+            <Button onClick={() => { setEditingIncident(null); setShowForm(true); }} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Incident
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">All Incidents</CardTitle>
-            <Button variant="ghost" size="sm" onClick={fetchIncidents} disabled={loading} className="gap-1">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-          <div className="mt-3">
-            <IncidentFilters filters={filters} onFilterChange={setFilters} />
+          <CardTitle className="text-lg">All Incidents</CardTitle>
+          <div className="mt-3 flex flex-wrap gap-3 items-center">
+            <Input
+              placeholder="Search incidents..."
+              value={filters.search}
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+              className="max-w-xs"
+              aria-label="Search incidents"
+            />
+            <Select
+              options={statusOptions}
+              value={filters.status}
+              onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+              className="w-[140px]"
+              placeholder="Status"
+            />
+            <Select
+              options={severityFilterOptions}
+              value={filters.severity}
+              onValueChange={(v) => setFilters((f) => ({ ...f, severity: v }))}
+              className="w-[140px]"
+              placeholder="Severity"
+            />
+            {(filters.search || filters.status || filters.severity) && (
+              <Button variant="ghost" size="sm" onClick={() => setFilters({ search: '', status: '', severity: '' })}>
+                Clear
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 mb-4">
+            <div className="rounded-md bg-destructive/10 p-3 mb-4" role="alert">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Skeleton className="h-6 w-16" />
-                    <Skeleton className="h-6 w-20" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : incidents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium">No incidents found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {filters.search || filters.status || filters.severity
-                  ? 'Try adjusting your search or filters.'
-                  : 'Create your first incident to get started.'}
-              </p>
-            </div>
+            <TableSkeleton rows={5} columns={5} />
+          ) : sortedIncidents.length === 0 ? (
+            <TableEmptyState
+              icon={AlertTriangle}
+              title="No incidents found"
+              description={filters.search || filters.status || filters.severity ? 'Try adjusting your search or filters.' : 'Create your first incident to get started.'}
+            />
           ) : (
-            <div className="space-y-2">
-              {incidents.map((incident) => (
-                <div
-                  key={incident.id}
-                  className="flex items-center justify-between rounded-lg border p-4 hover:bg-accent/50 cursor-pointer transition-colors"
-                  onClick={() => setViewingIncident(incident)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{incident.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {incident.createdBy.firstName} {incident.createdBy.lastName} &middot; {formatDate(incident.createdAt)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4 shrink-0">
-                    <Badge variant={severityColors[incident.severity] || 'default'}>
-                      {incident.severity}
-                    </Badge>
-                    <Badge variant={statusBadgeVariants[incident.status] || 'default'}>
-                      {incident.status === 'IN_PROGRESS' ? 'In Progress' : incident.status.charAt(0) + incident.status.slice(1).toLowerCase()}
-                    </Badge>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); setEditingIncident(incident); setShowForm(true); }}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                    {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); setDeletingIncident(incident); }}
-                      >
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t mt-4">
-              <p className="text-sm text-muted-foreground">
-                Showing {(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                  <Button
-                    key={p}
-                    variant={p === page ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPage(p)}
-                  >
-                    {p}
-                  </Button>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                  disabled={page >= pagination.totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead sortable sortDirection={sortField === 'title' ? sortDirection : null} onSort={() => handleSort('title')}>Title</TableHead>
+                      <TableHead sortable sortDirection={sortField === 'severity' ? sortDirection : null} onSort={() => handleSort('severity')}>Severity</TableHead>
+                      <TableHead sortable sortDirection={sortField === 'status' ? sortDirection : null} onSort={() => handleSort('status')}>Status</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead sortable sortDirection={sortField === 'createdAt' ? sortDirection : null} onSort={() => handleSort('createdAt')}>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedIncidents.map((incident) => (
+                      <TableRow key={incident.id}>
+                        <TableCell className="font-medium">
+                          <button
+                            onClick={() => setViewingIncident(incident)}
+                            className="text-left hover:text-primary transition-colors"
+                          >
+                            {incident.title}
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={severityColors[incident.severity] || 'default'}>{incident.severity}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusBadgeVariants[incident.status] || 'default'}>
+                            {incident.status === 'IN_PROGRESS' ? 'In Progress' : incident.status.charAt(0) + incident.status.slice(1).toLowerCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {incident.assignedUser ? `${incident.assignedUser.firstName} ${incident.assignedUser.lastName}` : '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(incident.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {canEdit && (
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingIncident(incident); setShowForm(true); }}>
+                                Edit
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeletingIncident(incident)}>
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            </div>
+              <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Rows per page:</span>
+                  <Select
+                    options={limitOptions.map((n) => ({ value: String(n), label: String(n) }))}
+                    value={String(limit)}
+                    onValueChange={(v) => setLimit(Number(v))}
+                  />
+                  <span>{pagination.total} total</span>
+                </div>
+                <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

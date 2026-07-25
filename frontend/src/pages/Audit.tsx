@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, RefreshCw, Download, Trash2, Eye, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import {
@@ -12,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableSkeleton, TableEmptyState } from '@/components/ui/table';
 import { Pagination } from '@/components/ui/pagination';
 import { Separator } from '@/components/ui/separator';
 import { auditApi, type AuditLog } from '@/lib/api';
@@ -88,12 +87,11 @@ export function Audit() {
       setTotalPages(result.pagination.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load audit logs');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [page, limit, search, severityFilter, actionFilter, userFilter, startDate, endDate]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => { setPage(1); }, [search, severityFilter, actionFilter, userFilter, startDate, endDate, limit]);
 
   function getStats() {
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -106,23 +104,13 @@ export function Audit() {
   }
 
   async function handleDelete(id: string) {
-    try {
-      await auditApi.delete(id);
-      showNotification('Audit log deleted successfully');
-      fetchLogs();
-    } catch {
-      showNotification('Failed to delete log', 'error');
-    }
+    try { await auditApi.delete(id); showNotification('Audit log deleted successfully'); fetchLogs(); }
+    catch { showNotification('Failed to delete log', 'error'); }
   }
 
   async function handleClear() {
-    try {
-      await auditApi.clear();
-      showNotification('All audit logs cleared successfully');
-      fetchLogs();
-    } catch {
-      showNotification('Failed to clear logs', 'error');
-    }
+    try { await auditApi.clear(); showNotification('All audit logs cleared successfully'); fetchLogs(); }
+    catch { showNotification('Failed to clear logs', 'error'); }
   }
 
   function handleExportCSV() {
@@ -149,13 +137,8 @@ export function Audit() {
   }
 
   function clearFilters() {
-    setSearch('');
-    setSeverityFilter('');
-    setActionFilter('');
-    setUserFilter('');
-    setStartDate('');
-    setEndDate('');
-    setPage(1);
+    setSearch(''); setSeverityFilter(''); setActionFilter('');
+    setUserFilter(''); setStartDate(''); setEndDate(''); setPage(1);
   }
 
   const stats = getStats();
@@ -189,47 +172,31 @@ export function Audit() {
               ? 'bg-destructive/10 text-destructive'
               : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
           )}
+          role="status"
         >
           <span>{notification.message}</span>
-          <button onClick={() => setNotification(null)} className="ml-2">
+          <button onClick={() => setNotification(null)} className="ml-2" aria-label="Dismiss">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Logs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{loading ? '-' : stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Critical Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-destructive">{stats.critical}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Failed Logins</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-orange-500">{stats.failedLogins}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Today&apos;s Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.today}</p>
-          </CardContent>
-        </Card>
+        {[
+          { label: 'Total Logs', value: stats.total, color: '' },
+          { label: 'Critical Events', value: stats.critical, color: 'text-destructive' },
+          { label: 'Failed Logins', value: stats.failedLogins, color: 'text-orange-500' },
+          { label: "Today's Events", value: stats.today, color: '' },
+        ].map((stat) => (
+          <Card key={stat.label}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-2xl font-bold ${stat.color}`}>{loading ? '-' : stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Card>
@@ -238,34 +205,21 @@ export function Audit() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search logs..."
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-8"
+                aria-label="Search audit logs"
               />
             </div>
-            <div className="w-[150px]">
-              <Select
-                options={severitySelectOptions}
-                value={severityFilter}
-                onValueChange={(v) => { setSeverityFilter(v); setPage(1); }}
-                placeholder="Severity"
-              />
-            </div>
-            <div className="w-[170px]">
-              <Select
-                options={actionSelectOptions}
-                value={actionFilter}
-                onValueChange={(v) => { setActionFilter(v); setPage(1); }}
-                placeholder="Action"
-              />
-            </div>
-            <Input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPage(1); }} className="w-[150px]" />
-            <Input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPage(1); }} className="w-[150px]" />
-            <Input placeholder="User ID" value={userFilter} onChange={(e) => { setUserFilter(e.target.value); setPage(1); }} className="w-[150px]" />
+            <Select options={severitySelectOptions} value={severityFilter} onValueChange={setSeverityFilter} className="w-[140px]" placeholder="Severity" />
+            <Select options={actionSelectOptions} value={actionFilter} onValueChange={setActionFilter} className="w-[160px]" placeholder="Action" />
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-[140px]" aria-label="Start date" />
+            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-[140px]" aria-label="End date" />
+            <Input placeholder="User ID" value={userFilter} onChange={(e) => setUserFilter(e.target.value)} className="w-[140px]" aria-label="Filter by user ID" />
             <Button variant="ghost" size="sm" onClick={clearFilters}>Clear Filters</Button>
           </div>
         </CardContent>
@@ -274,9 +228,7 @@ export function Audit() {
       <Card>
         <CardContent className="p-0">
           {loading ? (
-            <div className="space-y-2 p-4">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
+            <TableSkeleton rows={5} columns={7} />
           ) : error ? (
             <div className="flex flex-col items-center gap-3 p-8 text-center">
               <p className="text-sm text-destructive">{error}</p>
@@ -285,10 +237,11 @@ export function Audit() {
               </Button>
             </div>
           ) : logs.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 p-8 text-center">
-              <p className="text-sm text-muted-foreground">No audit logs found</p>
-              <p className="text-xs text-muted-foreground">Try adjusting your filters or check back later</p>
-            </div>
+            <TableEmptyState
+              icon={Search}
+              title="No audit logs found"
+              description="Try adjusting your filters or check back later."
+            />
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -316,12 +269,7 @@ export function Audit() {
                           {log.resourceId ? <span className="ml-1 font-mono">#{log.resourceId.slice(0, 8)}</span> : null}
                         </TableCell>
                         <TableCell>
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold',
-                              SEVERITY_COLORS[log.severity],
-                            )}
-                          >
+                          <span className={cn('inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold', SEVERITY_COLORS[log.severity])}>
                             {log.severity}
                           </span>
                         </TableCell>
@@ -329,10 +277,10 @@ export function Audit() {
                         <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">{log.description || '-'}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedLog(log); setDetailsOpen(true); }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedLog(log); setDetailsOpen(true); }} aria-label="View details">
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(log.id)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(log.id)} aria-label="Delete log">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -348,7 +296,7 @@ export function Audit() {
                   <Select
                     options={limitOptions.map((n) => ({ value: String(n), label: String(n) }))}
                     value={String(limit)}
-                    onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}
+                    onValueChange={(v) => setLimit(Number(v))}
                   />
                   <span>{total} total</span>
                 </div>
@@ -360,10 +308,10 @@ export function Audit() {
       </Card>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby="audit-detail-description">
           <DialogHeader>
             <DialogTitle>Audit Log Details</DialogTitle>
-            <DialogDescription>Detailed information about this audit event</DialogDescription>
+            <DialogDescription id="audit-detail-description">Detailed information about this audit event</DialogDescription>
           </DialogHeader>
           {selectedLog && (
             <div className="space-y-3">
@@ -390,12 +338,7 @@ export function Audit() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Severity</p>
-                  <span
-                    className={cn(
-                      'mt-1 inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold',
-                      SEVERITY_COLORS[selectedLog.severity],
-                    )}
-                  >
+                  <span className={cn('mt-1 inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold', SEVERITY_COLORS[selectedLog.severity])}>
                     {selectedLog.severity}
                   </span>
                 </div>

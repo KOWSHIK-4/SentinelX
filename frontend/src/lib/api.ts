@@ -1,8 +1,10 @@
 import type { User } from '@/store/authStore';
 import { useAuthStore } from '@/store/authStore';
 
-interface ApiOptions extends RequestInit {
+interface ApiOptions extends Omit<RequestInit, 'cache'> {
   skipAuth?: boolean;
+  useCache?: boolean;
+  cacheTTL?: number;
 }
 
 interface AuthResponseData {
@@ -21,8 +23,51 @@ interface ProfileResponseData {
 
 const BASE_URL = '/api';
 
+const cacheStore = new Map<string, { data: unknown; timestamp: number }>();
+const DEFAULT_CACHE_TTL = 30000;
+
+function getCacheKey(endpoint: string, options?: ApiOptions): string {
+  const token = useAuthStore.getState().token || '';
+  return `${token}:${endpoint}:${JSON.stringify(options?.body || '')}`;
+}
+
+function getFromCache(key: string, ttl: number): unknown | null {
+  const cached = cacheStore.get(key);
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    return cached.data;
+  }
+  cacheStore.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: unknown): void {
+  if (cacheStore.size > 100) {
+    const firstKey = cacheStore.keys().next().value;
+    if (firstKey) cacheStore.delete(firstKey);
+  }
+  cacheStore.set(key, { data, timestamp: Date.now() });
+}
+
+function clearCacheForPattern(pattern: RegExp): void {
+  for (const key of cacheStore.keys()) {
+    if (pattern.test(key)) {
+      cacheStore.delete(key);
+    }
+  }
+}
+
+export function clearApiCache() {
+  cacheStore.clear();
+}
+
 export async function api<T = unknown>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-  const { skipAuth = false, ...fetchOptions } = options;
+  const { skipAuth = false, useCache = true, cacheTTL = DEFAULT_CACHE_TTL, ...fetchOptions } = options;
+
+  const cacheKey = getCacheKey(endpoint, options);
+  if (useCache && fetchOptions.method === undefined) {
+    const cached = getFromCache(cacheKey, cacheTTL);
+    if (cached) return cached as T;
+  }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -48,6 +93,10 @@ export async function api<T = unknown>(endpoint: string, options: ApiOptions = {
     throw new Error(error);
   }
 
+  if (useCache && fetchOptions.method === undefined) {
+    setCache(cacheKey, data);
+  }
+
   return data;
 }
 
@@ -57,20 +106,19 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
       skipAuth: true,
+      useCache: false,
     }),
 
   register: (firstName: string, lastName: string, email: string, password: string) =>
-    api<AuthResponseData>(
-      '/auth/register',
-      {
-        method: 'POST',
-        body: JSON.stringify({ firstName, lastName, email, password }),
-        skipAuth: true,
-      },
-    ),
+    api<AuthResponseData>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ firstName, lastName, email, password }),
+      skipAuth: true,
+      useCache: false,
+    }),
 
   profile: () =>
-    api<ProfileResponseData>('/auth/profile'),
+    api<ProfileResponseData>('/auth/profile', { cacheTTL: 60000 }),
 };
 
 export interface IncidentUser {
@@ -218,11 +266,14 @@ export const assetApi = {
     status?: string;
     location?: string | null;
     description?: string | null;
-  }) =>
-    api<AssetResponse>('/assets', {
+  }) => {
+    clearCacheForPattern(/\/assets/);
+    return api<AssetResponse>('/assets', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
   update: (id: string, data: {
     assetName?: string;
@@ -236,19 +287,25 @@ export const assetApi = {
     status?: string;
     location?: string | null;
     description?: string | null;
-  }) =>
-    api<AssetResponse>(`/assets/${id}`, {
+  }) => {
+    clearCacheForPattern(/\/assets/);
+    return api<AssetResponse>(`/assets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
-  delete: (id: string) =>
-    api<{ success: boolean; message: string }>(`/assets/${id}`, {
+  delete: (id: string) => {
+    clearCacheForPattern(/\/assets/);
+    return api<{ success: boolean; message: string }>(`/assets/${id}`, {
       method: 'DELETE',
-    }),
+      useCache: false,
+    });
+  },
 
   getDashboardStats: () =>
-    api<AssetDashboardStatsResponse>('/assets/stats'),
+    api<AssetDashboardStatsResponse>('/assets/stats', { cacheTTL: 15000 }),
 };
 
 export interface AnalyticsOverview {
@@ -365,16 +422,16 @@ export interface AnalyticsTrendsResponse {
 
 export const analyticsApi = {
   getOverview: () =>
-    api<AnalyticsOverviewResponse>('/analytics/overview'),
+    api<AnalyticsOverviewResponse>('/analytics/overview', { cacheTTL: 30000 }),
 
   getIncidents: () =>
-    api<AnalyticsIncidentsResponse>('/analytics/incidents'),
+    api<AnalyticsIncidentsResponse>('/analytics/incidents', { cacheTTL: 30000 }),
 
   getAssets: () =>
-    api<AnalyticsAssetsResponse>('/analytics/assets'),
+    api<AnalyticsAssetsResponse>('/analytics/assets', { cacheTTL: 30000 }),
 
   getTrends: () =>
-    api<AnalyticsTrendsResponse>('/analytics/trends'),
+    api<AnalyticsTrendsResponse>('/analytics/trends', { cacheTTL: 30000 }),
 };
 
 export const incidentApi = {
@@ -386,25 +443,34 @@ export const incidentApi = {
   getById: (id: string) =>
     api<IncidentResponse>(`/incidents/${id}`),
 
-  create: (data: { title: string; description: string; severity?: string; status?: string; assignedTo?: string | null; assetIds?: string[] }) =>
-    api<IncidentResponse>('/incidents', {
+  create: (data: { title: string; description: string; severity?: string; status?: string; assignedTo?: string | null; assetIds?: string[] }) => {
+    clearCacheForPattern(/\/incidents/);
+    return api<IncidentResponse>('/incidents', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
-  update: (id: string, data: { title?: string; description?: string; status?: string; severity?: string; assignedTo?: string | null; assetIds?: string[] }) =>
-    api<IncidentResponse>(`/incidents/${id}`, {
+  update: (id: string, data: { title?: string; description?: string; status?: string; severity?: string; assignedTo?: string | null; assetIds?: string[] }) => {
+    clearCacheForPattern(/\/incidents/);
+    return api<IncidentResponse>(`/incidents/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
-  delete: (id: string) =>
-    api<{ success: boolean; message: string }>(`/incidents/${id}`, {
+  delete: (id: string) => {
+    clearCacheForPattern(/\/incidents/);
+    return api<{ success: boolean; message: string }>(`/incidents/${id}`, {
       method: 'DELETE',
-    }),
+      useCache: false,
+    });
+  },
 
   getDashboardStats: () =>
-    api<DashboardStatsResponse>('/incidents/stats'),
+    api<DashboardStatsResponse>('/incidents/stats', { cacheTTL: 15000 }),
 };
 
 export interface ReportFilters {
@@ -529,24 +595,33 @@ export interface DeleteResponse {
 
 export const teamApi = {
   list: () =>
-    api<TeamListResponse>('/team'),
+    api<TeamListResponse>('/team', { cacheTTL: 30000 }),
 
-  create: (data: { email: string; password: string; firstName: string; lastName: string; roleName: string }) =>
-    api<TeamMemberResponse>('/team', {
+  create: (data: { email: string; password: string; firstName: string; lastName: string; roleName: string }) => {
+    clearCacheForPattern(/\/team/);
+    return api<TeamMemberResponse>('/team', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
-  update: (id: string, data: { email?: string; firstName?: string; lastName?: string; roleName?: string; isActive?: boolean }) =>
-    api<TeamMemberResponse>(`/team/${id}`, {
+  update: (id: string, data: { email?: string; firstName?: string; lastName?: string; roleName?: string; isActive?: boolean }) => {
+    clearCacheForPattern(/\/team/);
+    return api<TeamMemberResponse>(`/team/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
-  delete: (id: string) =>
-    api<DeleteResponse>(`/team/${id}`, {
+  delete: (id: string) => {
+    clearCacheForPattern(/\/team/);
+    return api<DeleteResponse>(`/team/${id}`, {
       method: 'DELETE',
-    }),
+      useCache: false,
+    });
+  },
 };
 
 export interface SettingsData {
@@ -601,21 +676,27 @@ export interface SystemInfoResponse {
 
 export const settingsApi = {
   get: () =>
-    api<SettingsResponse>('/settings'),
+    api<SettingsResponse>('/settings', { cacheTTL: 60000 }),
 
-  update: (data: Partial<SettingsData>) =>
-    api<SettingsResponse>('/settings', {
+  update: (data: Partial<SettingsData>) => {
+    clearCacheForPattern(/\/settings/);
+    return api<SettingsResponse>('/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+      useCache: false,
+    });
+  },
 
-  reset: () =>
-    api<SettingsResponse>('/settings/reset', {
+  reset: () => {
+    clearCacheForPattern(/\/settings/);
+    return api<SettingsResponse>('/settings/reset', {
       method: 'POST',
-    }),
+      useCache: false,
+    });
+  },
 
   getSystemInfo: () =>
-    api<SystemInfoResponse>('/settings/system'),
+    api<SystemInfoResponse>('/settings/system', { cacheTTL: 60000 }),
 };
 
 export interface Notification {
@@ -643,50 +724,61 @@ export interface NotificationResponse {
 
 export const notificationApi = {
   list: () =>
-    api<NotificationListResponse>('/notifications'),
+    api<NotificationListResponse>('/notifications', { cacheTTL: 15000 }),
 
   create: (data: { title: string; message: string; type: string; severity?: string; link?: string | null }) =>
     api<NotificationResponse>('/notifications', {
       method: 'POST',
       body: JSON.stringify(data),
+      useCache: false,
     }),
 
-  markRead: (id: string) =>
-    api<NotificationResponse>(`/notifications/${id}/read`, {
+  markRead: (id: string) => {
+    clearCacheForPattern(/\/notifications/);
+    return api<NotificationResponse>(`/notifications/${id}/read`, {
       method: 'PUT',
-    }),
+      useCache: false,
+    });
+  },
 
-  markAllRead: () =>
-    api<{ success: boolean; message: string }>('/notifications/read-all', {
+  markAllRead: () => {
+    clearCacheForPattern(/\/notifications/);
+    return api<{ success: boolean; message: string }>('/notifications/read-all', {
       method: 'PUT',
-    }),
+      useCache: false,
+    });
+  },
 
-  delete: (id: string) =>
-    api<DeleteResponse>(`/notifications/${id}`, {
+  delete: (id: string) => {
+    clearCacheForPattern(/\/notifications/);
+    return api<DeleteResponse>(`/notifications/${id}`, {
       method: 'DELETE',
-    }),
+      useCache: false,
+    });
+  },
 };
 
 export const reportsApi = {
   getIncidents: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
-    return api<ReportsIncidentsResponse>(`/reports/incidents${query}`);
+    return api<ReportsIncidentsResponse>(`/reports/incidents${query}`, { cacheTTL: 30000 });
   },
 
   getAssets: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
-    return api<ReportsAssetsResponse>(`/reports/assets${query}`);
+    return api<ReportsAssetsResponse>(`/reports/assets${query}`, { cacheTTL: 30000 });
   },
 
   getSummary: (params?: Record<string, string>) => {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
-    return api<ReportsSummaryResponse>(`/reports/summary${query}`);
+    return api<ReportsSummaryResponse>(`/reports/summary${query}`, { cacheTTL: 30000 });
   },
 
   export: (data: { type: string; format: string; filters?: ReportFilters }) =>
     api<ExportResponse>('/reports/export', {
       method: 'POST',
       body: JSON.stringify(data),
+      useCache: false,
     }),
 };
 
@@ -729,13 +821,19 @@ export const auditApi = {
   getById: (id: string) =>
     api<AuditResponse>(`/audit/${id}`),
 
-  delete: (id: string) =>
-    api<AuditDeleteResponse>(`/audit/${id}`, {
+  delete: (id: string) => {
+    clearCacheForPattern(/\/audit/);
+    return api<AuditDeleteResponse>(`/audit/${id}`, {
       method: 'DELETE',
-    }),
+      useCache: false,
+    });
+  },
 
-  clear: () =>
-    api<AuditDeleteResponse>('/audit', {
+  clear: () => {
+    clearCacheForPattern(/\/audit/);
+    return api<AuditDeleteResponse>('/audit', {
       method: 'DELETE',
-    }),
+      useCache: false,
+    });
+  },
 };

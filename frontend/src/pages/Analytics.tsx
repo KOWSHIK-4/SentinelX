@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
@@ -31,7 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { ChartContainer, ChartTooltip, chartColors } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartSkeleton, chartColors } from '@/components/ui/chart';
 import { analyticsApi, type AnalyticsOverview, type AnalyticsIncidents, type AnalyticsAssets, type AnalyticsTrends } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 
@@ -63,17 +63,6 @@ function KpiSkeleton() {
   );
 }
 
-function ChartSkeleton({ height = 'h-64' }: { height?: string }) {
-  return (
-    <div className={`${height} flex items-center justify-center`}>
-      <div className="space-y-3 w-full px-4">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className={`w-full h-48 rounded-lg`} />
-      </div>
-    </div>
-  );
-}
-
 function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="space-y-3">
@@ -95,7 +84,7 @@ export function Analytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -111,14 +100,10 @@ export function Analytics() {
       setTrends(trendsRes.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load analytics data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
+    } finally { setLoading(false); }
   }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const kpiCards = [
     { icon: Activity, label: 'Total Incidents', value: overview?.totalIncidents ?? 0, color: 'text-blue-500' },
@@ -155,21 +140,30 @@ export function Analytics() {
     : [];
 
   const assetTypeColors = [
-    chartColors.blue,
-    chartColors.green,
-    chartColors.orange,
-    chartColors.purple,
-    chartColors.pink,
-    chartColors.cyan,
-    chartColors.red,
-    chartColors.amber,
-    chartColors.slate,
+    chartColors.blue, chartColors.green, chartColors.orange, chartColors.purple,
+    chartColors.pink, chartColors.cyan, chartColors.red, chartColors.amber, chartColors.slate,
   ];
 
   const formatMonth = (m: string) => {
     const [y, mo] = m.split('-');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${months[parseInt(mo, 10) - 1]} ${y}`;
+  };
+
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color?: string; stroke?: string }[]; label?: string }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="rounded-lg border bg-card p-3 shadow-lg">
+        <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
+        {payload.map((entry, i) => (
+          <div key={i} className="flex items-center gap-2 text-sm">
+            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color || entry.stroke || chartColors.blue }} />
+            <span className="text-muted-foreground">{entry.name}:</span>
+            <span className="font-medium">{entry.value.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -186,39 +180,25 @@ export function Analytics() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 p-4 flex items-center gap-3">
+        <div className="rounded-md bg-destructive/10 p-4 flex items-center gap-3" role="alert">
           <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
           <p className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchData} className="ml-auto">
-            Retry
-          </Button>
+          <Button variant="outline" size="sm" onClick={fetchData} className="ml-auto">Retry</Button>
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.1 }}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: i * 0.1 }}>
                 <KpiSkeleton />
               </motion.div>
             ))
           : kpiCards.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.1 }}>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {stat.label}
-                    </CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </CardHeader>
                   <CardContent>
@@ -239,51 +219,24 @@ export function Analytics() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <ChartSkeleton />
+              <ChartSkeleton height={300} />
             ) : trends && trends.trend.length > 0 ? (
               <ChartContainer>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={trends.trend.map((d) => ({ ...d, month: formatMonth(d.month) }))}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fontSize: 12 }}
-                      className="text-muted-foreground"
-                    />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
                     <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      name="Total"
-                      stroke={chartColors.blue}
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="critical"
-                      name="Critical"
-                      stroke={chartColors.red}
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="high"
-                      name="High"
-                      stroke={chartColors.orange}
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Line type="monotone" dataKey="total" name="Total" stroke={chartColors.blue} strokeWidth={2} dot={{ r: 3 }} animationBegin={0} animationDuration={1000} />
+                    <Line type="monotone" dataKey="critical" name="Critical" stroke={chartColors.red} strokeWidth={2} dot={{ r: 3 }} animationBegin={200} animationDuration={1000} />
+                    <Line type="monotone" dataKey="high" name="High" stroke={chartColors.orange} strokeWidth={2} dot={{ r: 3 }} animationBegin={400} animationDuration={1000} />
                   </LineChart>
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
-                No trend data available.
-              </div>
+              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">No trend data available.</div>
             )}
           </CardContent>
         </Card>
@@ -297,33 +250,32 @@ export function Analytics() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <ChartSkeleton />
+              <ChartSkeleton height={300} />
             ) : severityData.length > 0 ? (
               <ChartContainer>
                 <ResponsiveContainer width="100%" height={300}>
                   <RePieChart>
                     <Pie
                       data={severityData}
-                      cx="50%"
-                      cy="50%"
+                      cx="50%" cy="50%"
                       innerRadius={0}
                       outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
+                      animationBegin={0}
+                      animationDuration={800}
                     >
                       {severityData.map((entry, index) => (
                         <Cell key={index} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip content={<ChartTooltip />} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
                   </RePieChart>
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
-                No severity data available.
-              </div>
+              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">No severity data available.</div>
             )}
           </CardContent>
         </Card>
@@ -339,33 +291,32 @@ export function Analytics() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <ChartSkeleton />
+              <ChartSkeleton height={300} />
             ) : statusData.length > 0 ? (
               <ChartContainer>
                 <ResponsiveContainer width="100%" height={300}>
                   <RePieChart>
                     <Pie
                       data={statusData}
-                      cx="50%"
-                      cy="50%"
+                      cx="50%" cy="50%"
                       innerRadius={60}
                       outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
+                      animationBegin={0}
+                      animationDuration={800}
                     >
                       {statusData.map((entry, index) => (
                         <Cell key={index} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip content={<ChartTooltip />} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
                   </RePieChart>
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
-                No status data available.
-              </div>
+              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">No status data available.</div>
             )}
           </CardContent>
         </Card>
@@ -379,20 +330,17 @@ export function Analytics() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <ChartSkeleton />
+              <ChartSkeleton height={300} />
             ) : assetsByTypeData.length > 0 ? (
               <ChartContainer>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={assetsByTypeData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 12 }}
-                      className="text-muted-foreground"
-                    />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} className="text-muted-foreground" />
                     <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
                     <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]}>
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]} animationBegin={0} animationDuration={800}>
                       {assetsByTypeData.map((_, index) => (
                         <Cell key={index} fill={assetTypeColors[index % assetTypeColors.length]} />
                       ))}
@@ -401,9 +349,7 @@ export function Analytics() {
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
-                No asset type data available.
-              </div>
+              <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">No asset type data available.</div>
             )}
           </CardContent>
         </Card>
@@ -422,35 +368,25 @@ export function Analytics() {
               <TableSkeleton rows={5} />
             ) : assets && assets.topAffectedAssets.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm" role="table">
                   <thead>
                     <tr className="border-b border-border/40">
-                      <th className="text-left font-medium text-muted-foreground pb-3">Asset</th>
-                      <th className="text-left font-medium text-muted-foreground pb-3">Type</th>
-                      <th className="text-left font-medium text-muted-foreground pb-3">IP Address</th>
-                      <th className="text-left font-medium text-muted-foreground pb-3">Criticality</th>
-                      <th className="text-right font-medium text-muted-foreground pb-3">Incidents</th>
+                      <th className="text-left font-medium text-muted-foreground pb-3" scope="col">Asset</th>
+                      <th className="text-left font-medium text-muted-foreground pb-3" scope="col">Type</th>
+                      <th className="text-left font-medium text-muted-foreground pb-3" scope="col">IP Address</th>
+                      <th className="text-left font-medium text-muted-foreground pb-3" scope="col">Criticality</th>
+                      <th className="text-right font-medium text-muted-foreground pb-3" scope="col">Incidents</th>
                     </tr>
                   </thead>
                   <tbody>
                     {assets.topAffectedAssets.map((asset) => (
                       <tr key={asset.id} className="border-b border-border/20">
                         <td className="py-3 pr-4 font-medium">{asset.assetName}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {asset.assetType.replace(/_/g, ' ')}
-                        </td>
-                        <td className="py-3 pr-4 text-muted-foreground font-mono text-xs">
-                          {asset.ipAddress || '-'}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <Badge variant={severityBadge[asset.criticality] || 'default'}>
-                            {asset.criticality}
-                          </Badge>
-                        </td>
+                        <td className="py-3 pr-4 text-muted-foreground">{asset.assetType.replace(/_/g, ' ')}</td>
+                        <td className="py-3 pr-4 text-muted-foreground font-mono text-xs">{asset.ipAddress || '-'}</td>
+                        <td className="py-3 pr-4"><Badge variant={severityBadge[asset.criticality] || 'default'}>{asset.criticality}</Badge></td>
                         <td className="py-3 text-right">
-                          <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                            {asset.incidentCount}
-                          </span>
+                          <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{asset.incidentCount}</span>
                         </td>
                       </tr>
                     ))}
@@ -458,9 +394,7 @@ export function Analytics() {
                 </table>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                No asset incident data available.
-              </div>
+              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">No asset incident data available.</div>
             )}
           </CardContent>
         </Card>
@@ -487,31 +421,21 @@ export function Analytics() {
                   >
                     <div className="flex flex-col items-center gap-1">
                       <div className={`h-2 w-2 rounded-full ${statusDot[activity.status] || 'bg-blue-500'} mt-1.5`} />
-                      {index < trends.recentActivity.length - 1 && (
-                        <div className="w-px flex-1 bg-border/40" />
-                      )}
+                      {index < trends.recentActivity.length - 1 && <div className="w-px flex-1 bg-border/40" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm truncate">{activity.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant={severityBadge[activity.severity] || 'default'} className="text-[10px] px-1.5 py-0">
-                          {activity.severity}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {activity.createdBy.firstName} {activity.createdBy.lastName}
-                        </span>
+                        <Badge variant={severityBadge[activity.severity] || 'default'} className="text-[10px] px-1.5 py-0">{activity.severity}</Badge>
+                        <span className="text-xs text-muted-foreground">{activity.createdBy.firstName} {activity.createdBy.lastName}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatDate(activity.createdAt)}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(activity.createdAt)}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                No recent activity.
-              </div>
+              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">No recent activity.</div>
             )}
           </CardContent>
         </Card>

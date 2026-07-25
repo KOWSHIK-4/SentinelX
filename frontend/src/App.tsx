@@ -1,49 +1,62 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/providers/ThemeProvider';
-import { Landing } from '@/pages/Landing';
-import { Dashboard } from '@/pages/Dashboard';
-import { Login } from '@/pages/Login';
-import { Register } from '@/pages/Register';
-import { NotFound } from '@/pages/NotFound';
-import { ErrorPage } from '@/pages/ErrorPage';
-import { Incidents } from '@/pages/Incidents';
-import { Assets } from '@/pages/Assets';
-import { Analytics } from '@/pages/Analytics';
-import { Notifications } from '@/pages/Notifications';
-import { Reports } from '@/pages/Reports';
-import { Team } from '@/pages/Team';
-import { Settings } from '@/pages/Settings';
-import { Audit } from '@/pages/Audit';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Loading } from '@/pages/Loading';
+import { ErrorPage } from '@/pages/ErrorPage';
 
-const queryClient = new QueryClient();
+const Landing = lazy(() => import('@/pages/Landing').then((m) => ({ default: m.Landing })));
+const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const Login = lazy(() => import('@/pages/Login').then((m) => ({ default: m.Login })));
+const Register = lazy(() => import('@/pages/Register').then((m) => ({ default: m.Register })));
+const NotFound = lazy(() => import('@/pages/NotFound').then((m) => ({ default: m.NotFound })));
+const Incidents = lazy(() => import('@/pages/Incidents').then((m) => ({ default: m.Incidents })));
+const Assets = lazy(() => import('@/pages/Assets').then((m) => ({ default: m.Assets })));
+const Analytics = lazy(() => import('@/pages/Analytics').then((m) => ({ default: m.Analytics })));
+const Notifications = lazy(() => import('@/pages/Notifications').then((m) => ({ default: m.Notifications })));
+const Reports = lazy(() => import('@/pages/Reports').then((m) => ({ default: m.Reports })));
+const Team = lazy(() => import('@/pages/Team').then((m) => ({ default: m.Team })));
+const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })));
+const Audit = lazy(() => import('@/pages/Audit').then((m) => ({ default: m.Audit })));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 30000,
+    },
+  },
+});
 
 export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="sentinelx-theme">
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<ProtectedRoute />}>
-              <Route element={<AppLayout />} errorElement={<ErrorPage />}>
-                <Route index element={<Dashboard />} />
-                <Route path="incidents" element={<Incidents />} />
-                <Route path="assets" element={<Assets />} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="team" element={<Team />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="audit" element={<Audit />} />
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<ProtectedRoute />}>
+                <Route element={<AppLayout />} errorElement={<ErrorPage />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="incidents" element={<Incidents />} />
+                  <Route path="assets" element={<Assets />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="notifications" element={<Notifications />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="team" element={<Team />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="audit" element={<Audit />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </QueryClientProvider>
     </ThemeProvider>

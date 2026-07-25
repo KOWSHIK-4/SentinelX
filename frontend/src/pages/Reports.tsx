@@ -58,7 +58,6 @@ const reportCards = [
     title: 'Incident Reports',
     description: 'Detailed incident logs with severity and status breakdown.',
     color: 'text-red-500',
-    gradient: 'from-red-500/10 to-orange-500/5',
   },
   {
     key: 'assets' as ReportTab,
@@ -66,7 +65,6 @@ const reportCards = [
     title: 'Asset Reports',
     description: 'Complete asset inventory with type and criticality analysis.',
     color: 'text-blue-500',
-    gradient: 'from-blue-500/10 to-cyan-500/5',
   },
   {
     key: 'critical-incidents' as ReportTab,
@@ -74,7 +72,6 @@ const reportCards = [
     title: 'Critical Incident Reports',
     description: 'Focus on high-severity incidents requiring immediate attention.',
     color: 'text-amber-500',
-    gradient: 'from-amber-500/10 to-yellow-500/5',
   },
   {
     key: 'executive-summary' as ReportTab,
@@ -82,7 +79,6 @@ const reportCards = [
     title: 'Executive Summary',
     description: 'High-level overview of security posture and key metrics.',
     color: 'text-emerald-500',
-    gradient: 'from-emerald-500/10 to-green-500/5',
   },
 ];
 
@@ -148,11 +144,7 @@ function buildFilterParams(filters: Filters): Record<string, string> {
 export function Reports() {
   const [activeTab, setActiveTab] = useState<ReportTab>('incidents');
   const [filters, setFilters] = useState<Filters>({
-    startDate: '',
-    endDate: '',
-    severity: '',
-    status: '',
-    assetType: '',
+    startDate: '', endDate: '', severity: '', status: '', assetType: '',
   });
 
   const [incidentsReport, setIncidentsReport] = useState<IncidentsReport | null>(null);
@@ -192,27 +184,19 @@ export function Reports() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load report data.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [activeTab, filters]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleExport = async (format: 'pdf' | 'csv') => {
     try {
       const params = buildFilterParams(filters);
       const res = await reportsApi.export({
-        type: activeTab,
-        format,
+        type: activeTab, format,
         filters: Object.keys(params).length > 0 ? params : undefined,
       });
-      const blob = new Blob(
-        [JSON.stringify(res.data, null, 2)],
-        { type: format === 'csv' ? 'text/csv' : 'application/pdf' },
-      );
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: format === 'csv' ? 'text/csv' : 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -228,52 +212,21 @@ export function Reports() {
     <div className="flex flex-wrap items-end gap-3">
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-        <Input
-          type="date"
-          value={filters.startDate}
-          onChange={(e) => setFilters((f) => ({ ...f, startDate: e.target.value }))}
-          className="w-36"
-          placeholder="Start date"
-        />
+        <Input type="date" value={filters.startDate} onChange={(e) => setFilters((f) => ({ ...f, startDate: e.target.value }))} className="w-36" aria-label="Start date" />
         <span className="text-muted-foreground text-sm">to</span>
-        <Input
-          type="date"
-          value={filters.endDate}
-          onChange={(e) => setFilters((f) => ({ ...f, endDate: e.target.value }))}
-          className="w-36"
-          placeholder="End date"
-        />
+        <Input type="date" value={filters.endDate} onChange={(e) => setFilters((f) => ({ ...f, endDate: e.target.value }))} className="w-36" aria-label="End date" />
       </div>
       {(activeTab === 'incidents' || activeTab === 'critical-incidents') && (
         <>
-          <Select
-            options={severityOptions}
-            value={filters.severity}
-            onValueChange={(v) => setFilters((f) => ({ ...f, severity: v }))}
-            placeholder="All Severities"
-          />
-          <Select
-            options={statusOptions}
-            value={filters.status}
-            onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}
-            placeholder="All Statuses"
-          />
+          <Select options={severityOptions} value={filters.severity} onValueChange={(v) => setFilters((f) => ({ ...f, severity: v }))} placeholder="All Severities" />
+          <Select options={statusOptions} value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))} placeholder="All Statuses" />
         </>
       )}
       {activeTab === 'assets' && (
-        <Select
-          options={assetTypeOptions}
-          value={filters.assetType}
-          onValueChange={(v) => setFilters((f) => ({ ...f, assetType: v }))}
-          placeholder="All Types"
-        />
+        <Select options={assetTypeOptions} value={filters.assetType} onValueChange={(v) => setFilters((f) => ({ ...f, assetType: v }))} placeholder="All Types" />
       )}
       {(filters.startDate || filters.endDate || filters.severity || filters.status || filters.assetType) && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setFilters({ startDate: '', endDate: '', severity: '', status: '', assetType: '' })}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setFilters({ startDate: '', endDate: '', severity: '', status: '', assetType: '' })}>
           Clear
         </Button>
       )}
@@ -282,67 +235,35 @@ export function Reports() {
 
   const renderIncidentTable = (data: IncidentsReport['data']) => (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" role="table">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Title</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Severity</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Status</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Assigned To</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Created</th>
-            <th className="text-right font-medium text-muted-foreground pb-3">Actions</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Title</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Severity</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Status</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Assigned To</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Created</th>
+            <th className="text-right font-medium text-muted-foreground pb-3" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
           {data.map((incident) => (
             <tr key={incident.id} className="border-b border-border/40 hover:bg-accent/30 transition-colors">
               <td className="py-3 pr-4 font-medium max-w-[200px] truncate">{incident.title}</td>
-              <td className="py-3 pr-4">
-                <Badge variant={severityBadge[incident.severity] || 'default'}>
-                  {incident.severity}
-                </Badge>
-              </td>
-              <td className="py-3 pr-4">
-                <Badge variant={statusBadge[incident.status] || 'default'}>
-                  {incident.status === 'IN_PROGRESS' ? 'In Progress' : incident.status.charAt(0) + incident.status.slice(1).toLowerCase()}
-                </Badge>
-              </td>
-              <td className="py-3 pr-4 text-muted-foreground">
-                {incident.assignedUser
-                  ? `${incident.assignedUser.firstName} ${incident.assignedUser.lastName}`
-                  : '-'}
-              </td>
-              <td className="py-3 pr-4 text-muted-foreground text-xs whitespace-nowrap">
-                {formatDate(incident.createdAt)}
-              </td>
+              <td className="py-3 pr-4"><Badge variant={severityBadge[incident.severity] || 'default'}>{incident.severity}</Badge></td>
+              <td className="py-3 pr-4"><Badge variant={statusBadge[incident.status] || 'default'}>{incident.status === 'IN_PROGRESS' ? 'In Progress' : incident.status.charAt(0) + incident.status.slice(1).toLowerCase()}</Badge></td>
+              <td className="py-3 pr-4 text-muted-foreground">{incident.assignedUser ? `${incident.assignedUser.firstName} ${incident.assignedUser.lastName}` : '-'}</td>
+              <td className="py-3 pr-4 text-muted-foreground text-xs whitespace-nowrap">{formatDate(incident.createdAt)}</td>
               <td className="py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setPreviewItem(incident); setShowPreview(true); }}
-                    className="h-8 px-2"
-                  >
-                    <Eye className="h-3.5 w-3.5 mr-1" />
-                    Preview
+                  <Button variant="ghost" size="sm" onClick={() => { setPreviewItem(incident); setShowPreview(true); }} className="h-8 px-2">
+                    <Eye className="h-3.5 w-3.5 mr-1" /> Preview
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleExport('pdf')}
-                    className="h-8 px-2"
-                  >
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    PDF
+                  <Button variant="ghost" size="sm" onClick={() => handleExport('pdf')} className="h-8 px-2">
+                    <Download className="h-3.5 w-3.5 mr-1" /> PDF
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleExport('csv')}
-                    className="h-8 px-2"
-                  >
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    CSV
+                  <Button variant="ghost" size="sm" onClick={() => handleExport('csv')} className="h-8 px-2">
+                    <Download className="h-3.5 w-3.5 mr-1" /> CSV
                   </Button>
                 </div>
               </td>
@@ -355,65 +276,35 @@ export function Reports() {
 
   const renderAssetTable = (data: AssetsReport['data']) => (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" role="table">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Asset Name</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Type</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Criticality</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">Status</th>
-            <th className="text-left font-medium text-muted-foreground pb-3 pr-4">IP Address</th>
-            <th className="text-right font-medium text-muted-foreground pb-3">Actions</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Asset Name</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Type</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Criticality</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">Status</th>
+            <th className="text-left font-medium text-muted-foreground pb-3 pr-4" scope="col">IP Address</th>
+            <th className="text-right font-medium text-muted-foreground pb-3" scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
           {data.map((asset) => (
             <tr key={asset.id} className="border-b border-border/40 hover:bg-accent/30 transition-colors">
               <td className="py-3 pr-4 font-medium">{asset.assetName}</td>
-              <td className="py-3 pr-4 text-muted-foreground">
-                {asset.assetType.replace(/_/g, ' ')}
-              </td>
-              <td className="py-3 pr-4">
-                <Badge variant={severityBadge[asset.criticality] || 'default'}>
-                  {asset.criticality}
-                </Badge>
-              </td>
-              <td className="py-3 pr-4">
-                <Badge variant={asset.status === 'ACTIVE' ? 'success' : asset.status === 'MAINTENANCE' ? 'warning' : 'default'}>
-                  {asset.status}
-                </Badge>
-              </td>
-              <td className="py-3 pr-4 text-muted-foreground font-mono text-xs">
-                {asset.ipAddress || '-'}
-              </td>
+              <td className="py-3 pr-4 text-muted-foreground">{asset.assetType.replace(/_/g, ' ')}</td>
+              <td className="py-3 pr-4"><Badge variant={severityBadge[asset.criticality] || 'default'}>{asset.criticality}</Badge></td>
+              <td className="py-3 pr-4"><Badge variant={asset.status === 'ACTIVE' ? 'success' : asset.status === 'MAINTENANCE' ? 'warning' : 'default'}>{asset.status}</Badge></td>
+              <td className="py-3 pr-4 text-muted-foreground font-mono text-xs">{asset.ipAddress || '-'}</td>
               <td className="py-3 text-right">
                 <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setPreviewItem(asset); setShowPreview(true); }}
-                    className="h-8 px-2"
-                  >
-                    <Eye className="h-3.5 w-3.5 mr-1" />
-                    Preview
+                  <Button variant="ghost" size="sm" onClick={() => { setPreviewItem(asset); setShowPreview(true); }} className="h-8 px-2">
+                    <Eye className="h-3.5 w-3.5 mr-1" /> Preview
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleExport('pdf')}
-                    className="h-8 px-2"
-                  >
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    PDF
+                  <Button variant="ghost" size="sm" onClick={() => handleExport('pdf')} className="h-8 px-2">
+                    <Download className="h-3.5 w-3.5 mr-1" /> PDF
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleExport('csv')}
-                    className="h-8 px-2"
-                  >
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    CSV
+                  <Button variant="ghost" size="sm" onClick={() => handleExport('csv')} className="h-8 px-2">
+                    <Download className="h-3.5 w-3.5 mr-1" /> CSV
                   </Button>
                 </div>
               </td>
@@ -426,73 +317,38 @@ export function Reports() {
 
   const renderSummary = (data: SummaryReport) => (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total Incidents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data.totalIncidents.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Open Incidents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-amber-500">{data.openIncidents.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Critical Incidents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-500">{data.criticalIncidents.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Total Assets</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data.totalAssets.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Active Assets</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-emerald-500">{data.activeAssets.toLocaleString()}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Critical Assets</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-500">{data.criticalAssets.toLocaleString()}</div>
-        </CardContent>
-      </Card>
+      {[
+        { label: 'Total Incidents', value: data.totalIncidents, color: '' },
+        { label: 'Open Incidents', value: data.openIncidents, color: 'text-amber-500' },
+        { label: 'Critical Incidents', value: data.criticalIncidents, color: 'text-red-500' },
+        { label: 'Total Assets', value: data.totalAssets, color: '' },
+        { label: 'Active Assets', value: data.activeAssets, color: 'text-emerald-500' },
+        { label: 'Critical Assets', value: data.criticalAssets, color: 'text-red-500' },
+      ].map((stat) => (
+        <Card key={stat.label}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${stat.color}`}>{stat.value.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 
   const renderContent = () => {
     if (error) {
       return (
-        <div className="rounded-md bg-destructive/10 p-4 flex items-center gap-3">
+        <div className="rounded-md bg-destructive/10 p-4 flex items-center gap-3" role="alert">
           <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
           <p className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchData} className="ml-auto">
-            Retry
-          </Button>
+          <Button variant="outline" size="sm" onClick={fetchData} className="ml-auto">Retry</Button>
         </div>
       );
     }
 
-    if (loading) {
-      return <ReportSkeleton />;
-    }
+    if (loading) return <ReportSkeleton />;
 
     switch (activeTab) {
       case 'incidents':
@@ -502,9 +358,7 @@ export function Reports() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-lg font-medium">No incidents found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your filters or date range.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or date range.</p>
             </div>
           );
         }
@@ -516,9 +370,7 @@ export function Reports() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Server className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-lg font-medium">No assets found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your filters or date range.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or date range.</p>
             </div>
           );
         }
@@ -530,9 +382,7 @@ export function Reports() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-lg font-medium">No summary data available</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your filters or date range.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or date range.</p>
             </div>
           );
         }
@@ -541,29 +391,18 @@ export function Reports() {
             {renderSummary(summaryReport)}
             {summaryReport.recentIncidents.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recent Incidents</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Recent Incidents</CardTitle></CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {summaryReport.recentIncidents.map((incident) => (
-                      <div
-                        key={incident.id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/30 transition-colors"
-                      >
+                      <div key={incident.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/30 transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{incident.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {incident.createdBy.firstName} {incident.createdBy.lastName} &middot; {formatDate(incident.createdAt)}
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{incident.createdBy.firstName} {incident.createdBy.lastName} · {formatDate(incident.createdAt)}</p>
                         </div>
                         <div className="flex items-center gap-2 ml-4 shrink-0">
-                          <Badge variant={severityBadge[incident.severity] || 'default'}>
-                            {incident.severity}
-                          </Badge>
-                          <Badge variant={statusBadge[incident.status] || 'default'}>
-                            {incident.status === 'IN_PROGRESS' ? 'In Progress' : incident.status.charAt(0) + incident.status.slice(1).toLowerCase()}
-                          </Badge>
+                          <Badge variant={severityBadge[incident.severity] || 'default'}>{incident.severity}</Badge>
+                          <Badge variant={statusBadge[incident.status] || 'default'}>{incident.status === 'IN_PROGRESS' ? 'In Progress' : incident.status.charAt(0) + incident.status.slice(1).toLowerCase()}</Badge>
                         </div>
                       </div>
                     ))}
@@ -571,9 +410,7 @@ export function Reports() {
                 </CardContent>
               </Card>
             )}
-            <p className="text-xs text-muted-foreground mt-4">
-              Report generated: {formatDate(summaryReport.reportGeneratedAt)}
-            </p>
+            <p className="text-xs text-muted-foreground mt-4">Report generated: {formatDate(summaryReport.reportGeneratedAt)}</p>
           </>
         );
     }
@@ -602,14 +439,13 @@ export function Reports() {
           >
             <Card
               className={`cursor-pointer transition-all hover:shadow-md ${
-                activeTab === card.key
-                  ? 'ring-2 ring-primary border-primary'
-                  : ''
+                activeTab === card.key ? 'ring-2 ring-primary border-primary' : ''
               }`}
-              onClick={() => {
-                setActiveTab(card.key);
-                setPreviewItem(null);
-              }}
+              onClick={() => { setActiveTab(card.key); setPreviewItem(null); }}
+              role="button"
+              tabIndex={0}
+              aria-pressed={activeTab === card.key}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setActiveTab(card.key); setPreviewItem(null); } }}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -628,29 +464,13 @@ export function Reports() {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <CardTitle className="text-lg">
-              {reportCards.find((c) => c.key === activeTab)?.title || 'Report'}
-            </CardTitle>
+            <CardTitle className="text-lg">{reportCards.find((c) => c.key === activeTab)?.title || 'Report'}</CardTitle>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExport('pdf')}
-                disabled={loading}
-                className="gap-1"
-              >
-                <Download className="h-4 w-4" />
-                Download PDF
+              <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} disabled={loading} className="gap-1">
+                <Download className="h-4 w-4" /> Download PDF
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExport('csv')}
-                disabled={loading}
-                className="gap-1"
-              >
-                <Download className="h-4 w-4" />
-                Download CSV
+              <Button variant="outline" size="sm" onClick={() => handleExport('csv')} disabled={loading} className="gap-1">
+                <Download className="h-4 w-4" /> Download CSV
               </Button>
             </div>
           </div>
@@ -672,81 +492,22 @@ export function Reports() {
               <div className="space-y-3">
                 {'title' in previewItem ? (
                   <>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Title</p>
-                      <p className="text-sm font-medium">{(previewItem as Incident).title}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Description</p>
-                      <p className="text-sm">{(previewItem as Incident).description}</p>
-                    </div>
+                    <div><p className="text-xs text-muted-foreground">Title</p><p className="text-sm font-medium">{(previewItem as Incident).title}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Description</p><p className="text-sm">{(previewItem as Incident).description}</p></div>
                     <div className="flex gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Severity</p>
-                        <Badge variant={severityBadge[(previewItem as Incident).severity] || 'default'}>
-                          {(previewItem as Incident).severity}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Status</p>
-                        <Badge variant={statusBadge[(previewItem as Incident).status] || 'default'}>
-                          {(previewItem as Incident).status === 'IN_PROGRESS' ? 'In Progress' : (previewItem as Incident).status.charAt(0) + (previewItem as Incident).status.slice(1).toLowerCase()}
-                        </Badge>
-                      </div>
+                      <div><p className="text-xs text-muted-foreground">Severity</p><Badge variant={severityBadge[(previewItem as Incident).severity] || 'default'}>{(previewItem as Incident).severity}</Badge></div>
+                      <div><p className="text-xs text-muted-foreground">Status</p><Badge variant={statusBadge[(previewItem as Incident).status] || 'default'}>{(previewItem as Incident).status === 'IN_PROGRESS' ? 'In Progress' : (previewItem as Incident).status.charAt(0) + (previewItem as Incident).status.slice(1).toLowerCase()}</Badge></div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Created</p>
-                      <p className="text-sm">{formatDate((previewItem as Incident).createdAt)}</p>
-                    </div>
-                    {(previewItem as Incident).assignedUser && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Assigned To</p>
-                        <p className="text-sm">{(previewItem as Incident).assignedUser!.firstName} {(previewItem as Incident).assignedUser!.lastName}</p>
-                      </div>
-                    )}
+                    <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm">{formatDate((previewItem as Incident).createdAt)}</p></div>
                   </>
                 ) : (
                   <>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Asset Name</p>
-                      <p className="text-sm font-medium">{(previewItem as Asset).assetName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Type</p>
-                      <p className="text-sm">{(previewItem as Asset).assetType.replace(/_/g, ' ')}</p>
-                    </div>
+                    <div><p className="text-xs text-muted-foreground">Asset Name</p><p className="text-sm font-medium">{(previewItem as Asset).assetName}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Type</p><p className="text-sm">{(previewItem as Asset).assetType.replace(/_/g, ' ')}</p></div>
                     <div className="flex gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Criticality</p>
-                        <Badge variant={severityBadge[(previewItem as Asset).criticality] || 'default'}>
-                          {(previewItem as Asset).criticality}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Status</p>
-                        <Badge variant={(previewItem as Asset).status === 'ACTIVE' ? 'success' : (previewItem as Asset).status === 'MAINTENANCE' ? 'warning' : 'default'}>
-                          {(previewItem as Asset).status}
-                        </Badge>
-                      </div>
+                      <div><p className="text-xs text-muted-foreground">Criticality</p><Badge variant={severityBadge[(previewItem as Asset).criticality] || 'default'}>{(previewItem as Asset).criticality}</Badge></div>
+                      <div><p className="text-xs text-muted-foreground">Status</p><Badge variant={(previewItem as Asset).status === 'ACTIVE' ? 'success' : (previewItem as Asset).status === 'MAINTENANCE' ? 'warning' : 'default'}>{(previewItem as Asset).status}</Badge></div>
                     </div>
-                    {(previewItem as Asset).ipAddress && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">IP Address</p>
-                        <p className="text-sm font-mono">{(previewItem as Asset).ipAddress}</p>
-                      </div>
-                    )}
-                    {(previewItem as Asset).operatingSystem && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">OS</p>
-                        <p className="text-sm">{(previewItem as Asset).operatingSystem}</p>
-                      </div>
-                    )}
-                    {(previewItem as Asset).location && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Location</p>
-                        <p className="text-sm">{(previewItem as Asset).location}</p>
-                      </div>
-                    )}
                   </>
                 )}
               </div>
