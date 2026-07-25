@@ -21,7 +21,7 @@ interface ProfileResponseData {
   data: User & { roles?: { id: string; name: string }[]; isActive?: boolean; createdAt?: string; updatedAt?: string };
 }
 
-const BASE_URL = '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const cacheStore = new Map<string, { data: unknown; timestamp: number }>();
 const DEFAULT_CACHE_TTL = 30000;
