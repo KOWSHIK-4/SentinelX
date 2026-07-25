@@ -10,6 +10,7 @@ import {
   BarChart3,
   LogOut,
   Bell,
+  ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -24,6 +25,7 @@ const sidebarItems = [
   { icon: Server, label: 'Assets', href: '/dashboard/assets' },
   { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
   { icon: FileText, label: 'Reports', href: '/dashboard/reports' },
+  { icon: ScrollText, label: 'Audit Logs', href: '/dashboard/audit' },
   { icon: Users, label: 'Team', href: '/dashboard/team' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ];

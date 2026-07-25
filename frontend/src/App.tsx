@@ -14,6 +14,7 @@ import { Notifications } from '@/pages/Notifications';
 import { Reports } from '@/pages/Reports';
 import { Team } from '@/pages/Team';
 import { Settings } from '@/pages/Settings';
+import { Audit } from '@/pages/Audit';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="reports" element={<Reports />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="audit" element={<Audit />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
