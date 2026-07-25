@@ -1,19 +1,24 @@
+import { createServer } from 'http';
 import app from './app';
 import { env } from './config/env';
 import { prisma } from './config/database';
+import { initializeSocket } from './utils/socket';
 
 async function main() {
   try {
     await prisma.$connect();
 
-    const server = app.listen(env.PORT, () => {
+    const httpServer = createServer(app);
+    initializeSocket(httpServer);
+
+    httpServer.listen(env.PORT, () => {
       console.log(`Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
       console.log(`API docs available at http://localhost:${env.PORT}/api/docs`);
     });
 
     process.on('SIGTERM', async () => {
       console.log('SIGTERM received. Shutting down gracefully...');
-      server.close(async () => {
+      httpServer.close(async () => {
         await prisma.$disconnect();
         process.exit(0);
       });
@@ -21,7 +26,7 @@ async function main() {
 
     process.on('SIGINT', async () => {
       console.log('SIGINT received. Shutting down gracefully...');
-      server.close(async () => {
+      httpServer.close(async () => {
         await prisma.$disconnect();
         process.exit(0);
       });

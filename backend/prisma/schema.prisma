@@ -22,6 +22,8 @@ model User {
   assignedIncidents Incident[] @relation("AssignedIncidents")
   createdIncidents  Incident[] @relation("CreatedIncidents")
 
+  @@index([isActive])
+  @@index([email])
   @@map("users")
 }
 
@@ -49,6 +51,7 @@ model Permission {
 
   roles RolePermission[]
 
+  @@index([resource, action])
   @@map("permissions")
 }
 
@@ -59,6 +62,8 @@ model UserRole {
   role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
   @@map("user_roles")
 }
 
@@ -69,6 +74,8 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
   @@map("role_permissions")
 }
 
@@ -131,6 +138,9 @@ model Incident {
   @@index([assignedTo])
   @@index([createdAt])
   @@index([title, description])
+  @@index([status, severity])
+  @@index([createdById])
+  @@index([status, createdAt])
   @@map("incidents")
 }
 
@@ -156,6 +166,9 @@ model Asset {
   @@index([assetType])
   @@index([status])
   @@index([criticality])
+  @@index([status, criticality])
+  @@index([assetType, status])
+  @@index([createdAt])
   @@map("assets")
 }
 
@@ -206,6 +219,8 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+  @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 
@@ -225,6 +240,8 @@ model AuditLog {
   @@index([userId])
   @@index([action, createdAt])
   @@index([severity])
+  @@index([createdAt])
+  @@index([resource, action])
   @@map("audit_logs")
 }
 
@@ -235,5 +252,7 @@ model IncidentAsset {
   asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@id([incidentId, assetId])
+  @@index([incidentId])
+  @@index([assetId])
   @@map("incident_assets")
 }

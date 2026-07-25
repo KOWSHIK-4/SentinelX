@@ -6,6 +6,8 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Loading } from '@/pages/Loading';
 import { ErrorPage } from '@/pages/ErrorPage';
+import { useSocket } from '@/hooks/useSocketEvent';
+import { useNotificationSocket } from '@/store/notificationStore';
 
 const Landing = lazy(() => import('@/pages/Landing').then((m) => ({ default: m.Landing })));
 const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })));
@@ -31,32 +33,41 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppContent() {
+  useSocket();
+  useNotificationSocket();
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<ProtectedRoute />}>
+          <Route element={<AppLayout />} errorElement={<ErrorPage />}>
+            <Route index element={<Dashboard />} />
+            <Route path="incidents" element={<Incidents />} />
+            <Route path="assets" element={<Assets />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="team" element={<Team />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="audit" element={<Audit />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="sentinelx-theme">
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Suspense fallback={<Loading />}>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<ProtectedRoute />}>
-                <Route element={<AppLayout />} errorElement={<ErrorPage />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="incidents" element={<Incidents />} />
-                  <Route path="assets" element={<Assets />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="notifications" element={<Notifications />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="team" element={<Team />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="audit" element={<Audit />} />
-                </Route>
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <AppContent />
         </BrowserRouter>
       </QueryClientProvider>
     </ThemeProvider>

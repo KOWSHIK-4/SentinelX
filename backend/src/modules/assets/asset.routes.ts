@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
-import { authorize } from '../../middleware/authorize';
+import { requirePermission, Permissions } from '../../middleware/requirePermission';
 import { validate } from '../../middleware/validate';
 import { createAssetSchema, updateAssetSchema, assetQuerySchema } from './asset.schema';
 import {
@@ -16,10 +16,10 @@ const router = Router();
 
 router.get('/stats', authenticate, getAssetStats);
 
-router.get('/', authenticate, validate(assetQuerySchema, 'query'), getAssets);
-router.post('/', authenticate, authorize('Admin', 'Analyst'), validate(createAssetSchema), createAsset);
-router.get('/:id', authenticate, getAsset);
-router.put('/:id', authenticate, authorize('Admin', 'Analyst'), validate(updateAssetSchema), updateAsset);
-router.delete('/:id', authenticate, authorize('Admin'), deleteAsset);
+router.get('/', authenticate, validate(assetQuerySchema, 'query'), requirePermission(Permissions.ASSETS_READ), getAssets);
+router.post('/', authenticate, requirePermission(Permissions.ASSETS_WRITE), validate(createAssetSchema), createAsset);
+router.get('/:id', authenticate, requirePermission(Permissions.ASSETS_READ), getAsset);
+router.put('/:id', authenticate, requirePermission(Permissions.ASSETS_WRITE), validate(updateAssetSchema), updateAsset);
+router.delete('/:id', authenticate, requirePermission(Permissions.ASSETS_WRITE), deleteAsset);
 
 export default router;

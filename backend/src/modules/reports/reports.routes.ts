@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
-import { authorize } from '../../middleware/authorize';
+import { requirePermission, Permissions } from '../../middleware/requirePermission';
 import { validate } from '../../middleware/validate';
 import { reportFilterSchema, exportReportSchema } from './reports.schema';
 import {
@@ -15,6 +15,6 @@ const router = Router();
 router.get('/incidents', authenticate, validate(reportFilterSchema, 'query'), getIncidentsReport);
 router.get('/assets', authenticate, validate(reportFilterSchema, 'query'), getAssetsReport);
 router.get('/summary', authenticate, validate(reportFilterSchema, 'query'), getSummaryReport);
-router.post('/export', authenticate, authorize('Admin', 'Analyst'), validate(exportReportSchema), exportReport);
+router.post('/export', authenticate, requirePermission(Permissions.REPORTS_EXPORT), validate(exportReportSchema), exportReport);
 
 export default router;

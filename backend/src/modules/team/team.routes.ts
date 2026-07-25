@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
-import { authorize } from '../../middleware/authorize';
+import { requirePermission, Permissions } from '../../middleware/requirePermission';
 import { validate } from '../../middleware/validate';
 import { createTeamMemberSchema, updateTeamMemberSchema } from './team.schema';
 import {
@@ -12,9 +12,9 @@ import {
 
 const router = Router();
 
-router.get('/', authenticate, listTeam);
-router.post('/', authenticate, authorize('Admin'), validate(createTeamMemberSchema), createTeamMember);
-router.put('/:id', authenticate, authorize('Admin'), validate(updateTeamMemberSchema), updateTeamMember);
-router.delete('/:id', authenticate, authorize('Admin'), deleteTeamMember);
+router.get('/', authenticate, requirePermission(Permissions.USERS_MANAGE), listTeam);
+router.post('/', authenticate, requirePermission(Permissions.USERS_MANAGE), validate(createTeamMemberSchema), createTeamMember);
+router.put('/:id', authenticate, requirePermission(Permissions.USERS_MANAGE), validate(updateTeamMemberSchema), updateTeamMember);
+router.delete('/:id', authenticate, requirePermission(Permissions.USERS_MANAGE), deleteTeamMember);
 
 export default router;

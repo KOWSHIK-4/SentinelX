@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
+import Sentry from '@sentry/node';
 import { env } from '../config/env';
 import { ApiResponse } from '../types';
 
@@ -39,6 +40,10 @@ export function errorHandler(
   res: Response<ApiResponse>,
   _next: NextFunction,
 ): void {
+  if (env.SENTRY_DSN) {
+    Sentry.captureException(err);
+  }
+
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       success: false,

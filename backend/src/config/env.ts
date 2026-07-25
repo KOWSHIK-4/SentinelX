@@ -15,6 +15,7 @@ const envSchema = z.object({
   API_VERSION: z.string().default('1.0.0'),
   CLOUDINARY_URL: z.string().optional(),
   UPLOAD_DIR: z.string().default('uploads'),
+  SENTRY_DSN: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

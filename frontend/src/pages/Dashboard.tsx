@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { incidentApi, assetApi, notificationApi, auditApi, type DashboardStats, type AssetDashboardStats, type AuditLog, type Notification as ApiNotification } from '@/lib/api';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
 import { useAutoRefresh } from '@/lib/utils';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 
 const severityDot: Record<string, string> = {
   CRITICAL: 'bg-destructive',
@@ -116,6 +117,15 @@ export function Dashboard() {
   }, [fetchAllData]);
 
   useAutoRefresh(fetchAllData, 30000);
+
+  useSocketEvent('dashboard:statsChanged', () => {
+    incidentApi.getDashboardStats().then((res) => setStats(res.data)).catch(() => {});
+    assetApi.getDashboardStats().then((res) => setAssetStats(res.data)).catch(() => {});
+  });
+
+  useSocketEvent('notification:created', () => {
+    notificationApi.list().then((res) => setNotifications(res.data?.slice(0, 5) || [])).catch(() => {});
+  });
 
   const statCards = [
     { icon: Activity, label: 'Total Incidents', value: stats?.totalIncidents ?? 0 },

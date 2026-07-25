@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
-import { authorize } from '../../middleware/authorize';
+import { requirePermission, Permissions } from '../../middleware/requirePermission';
 import { validate } from '../../middleware/validate';
 import { updateSettingsSchema } from './settings.schema';
 import { getSettings, updateSettings, resetSettings, getSystemInfo, uploadLogoHandler } from './settings.controller';
@@ -8,9 +8,9 @@ import { getSettings, updateSettings, resetSettings, getSystemInfo, uploadLogoHa
 const router = Router();
 
 router.get('/', authenticate, getSettings);
-router.put('/', authenticate, authorize('Admin'), validate(updateSettingsSchema), updateSettings);
-router.post('/reset', authenticate, authorize('Admin'), resetSettings);
+router.put('/', authenticate, requirePermission(Permissions.SETTINGS_UPDATE), validate(updateSettingsSchema), updateSettings);
+router.post('/reset', authenticate, requirePermission(Permissions.SETTINGS_UPDATE), resetSettings);
 router.get('/system', authenticate, getSystemInfo);
-router.post('/logo', authenticate, authorize('Admin'), uploadLogoHandler);
+router.post('/logo', authenticate, requirePermission(Permissions.SETTINGS_UPDATE), uploadLogoHandler);
 
 export default router;

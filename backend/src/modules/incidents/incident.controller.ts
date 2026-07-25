@@ -4,6 +4,7 @@ import { IncidentService } from './incident.service';
 import { AuthRequest, ApiResponse } from '../../types';
 import { incidentQuerySchema } from './incident.schema';
 import { createAuditLog } from '../audit/audit.service';
+import { emitEvent } from '../../utils/socket';
 
 type IncidentQuery = z.infer<typeof incidentQuerySchema>;
 
@@ -13,6 +14,8 @@ export async function createIncident(req: AuthRequest, res: Response<ApiResponse
   try {
     const incident = await incidentService.create(req, req.body);
     await createAuditLog(req, 'Create Incident', 'Incident', incident.id, `Created incident: ${incident.title}`, 'Info');
+    emitEvent('incident:created', incident);
+    emitEvent('dashboard:statsChanged', { type: 'incident' });
     res.status(201).json({ success: true, data: incident, message: 'Incident created successfully.' });
   } catch (error) {
     next(error);
@@ -42,6 +45,11 @@ export async function updateIncident(req: AuthRequest, res: Response<ApiResponse
   try {
     const incident = await incidentService.update(req.params.id, req.body);
     await createAuditLog(req, 'Update Incident', 'Incident', incident.id, `Updated incident: ${incident.title}`, 'Info');
+
+    const eventName = incident.status === 'RESOLVED' ? 'incident:resolved' : 'incident:updated';
+    emitEvent(eventName, incident);
+    emitEvent('dashboard:statsChanged', { type: 'incident' });
+
     res.json({ success: true, data: incident, message: 'Incident updated successfully.' });
   } catch (error) {
     next(error);
@@ -53,6 +61,8 @@ export async function deleteIncident(req: AuthRequest, res: Response<ApiResponse
     const incident = await incidentService.findById(req.params.id);
     await createAuditLog(req, 'Delete Incident', 'Incident', req.params.id, `Deleted incident: ${incident.title}`, 'Warning');
     await incidentService.delete(req.params.id);
+    emitEvent('incident:deleted', { id: req.params.id });
+    emitEvent('dashboard:statsChanged', { type: 'incident' });
     res.json({ success: true, message: 'Incident deleted successfully.' });
   } catch (error) {
     next(error);

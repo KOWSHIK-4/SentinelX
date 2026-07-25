@@ -9,6 +9,7 @@ import { swaggerSpec } from './config/swagger';
 import { testDatabaseConnection } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
 import { correlationId } from './middleware/correlationId';
+import { initializeSentry } from './config/sentry';
 import authRoutes from './modules/auth/auth.routes';
 import incidentRoutes from './modules/incidents/incident.routes';
 import assetRoutes from './modules/assets/asset.routes';
@@ -18,6 +19,9 @@ import teamRoutes from './modules/team/team.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import notificationRoutes from './modules/notifications/notifications.routes';
 import auditRoutes from './modules/audit/audit.routes';
+import v1Routes from './routes/v1';
+
+initializeSentry();
 
 const app = express();
 
@@ -79,15 +83,23 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'SentinelX API Documentation',
 }));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/incidents', incidentRoutes);
-app.use('/api/assets', assetRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/team', teamRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/audit', auditRoutes);
+const moduleRoutes = [
+  { path: '/auth', router: authRoutes },
+  { path: '/incidents', router: incidentRoutes },
+  { path: '/assets', router: assetRoutes },
+  { path: '/analytics', router: analyticsRoutes },
+  { path: '/reports', router: reportRoutes },
+  { path: '/team', router: teamRoutes },
+  { path: '/settings', router: settingsRoutes },
+  { path: '/notifications', router: notificationRoutes },
+  { path: '/audit', router: auditRoutes },
+];
+
+for (const { path: routePath, router } of moduleRoutes) {
+  app.use(`/api${routePath}`, router);
+}
+
+app.use('/api/v1', v1Routes);
 
 const uploadsPath = path.resolve(process.cwd(), env.UPLOAD_DIR);
 app.use('/api/uploads', express.static(uploadsPath));
