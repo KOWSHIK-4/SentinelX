@@ -2,7 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm ci && npx prisma generate --schema=backend/prisma/schema.prisma && npm run build -w backend"
+    "buildCommand": "npm ci --prefer-offline --no-audit && npx prisma generate --schema=backend/prisma/schema.prisma && npm run build -w backend",
+    "watchPatterns": [
+      "backend/**"
+    ]
   },
   "deploy": {
     "startCommand": "node backend/dist/server.js",
