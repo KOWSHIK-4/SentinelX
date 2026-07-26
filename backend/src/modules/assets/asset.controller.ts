@@ -5,6 +5,7 @@ import { AuthRequest, ApiResponse } from '../../types';
 import { assetQuerySchema } from './asset.schema';
 import { createAuditLog } from '../audit/audit.service';
 import { emitEvent } from '../../utils/socket';
+import { cacheDeletePattern } from '../../config/redis';
 
 type AssetQuery = z.infer<typeof assetQuerySchema>;
 
@@ -16,6 +17,9 @@ export async function createAsset(req: AuthRequest, res: Response<ApiResponse>, 
     await createAuditLog(req, 'Create Asset', 'Asset', asset.id, `Created asset: ${asset.assetName}`, 'Info');
     emitEvent('asset:created', asset);
     emitEvent('dashboard:statsChanged', { type: 'asset' });
+    await cacheDeletePattern('sentinelx:assets:*');
+    await cacheDeletePattern('sentinelx:analytics:*');
+    await cacheDeletePattern('sentinelx:reports:*');
     res.status(201).json({ success: true, data: asset, message: 'Asset created successfully.' });
   } catch (error) {
     next(error);
@@ -47,6 +51,9 @@ export async function updateAsset(req: AuthRequest, res: Response<ApiResponse>, 
     await createAuditLog(req, 'Update Asset', 'Asset', asset.id, `Updated asset: ${asset.assetName}`, 'Info');
     emitEvent('asset:updated', asset);
     emitEvent('dashboard:statsChanged', { type: 'asset' });
+    await cacheDeletePattern('sentinelx:assets:*');
+    await cacheDeletePattern('sentinelx:analytics:*');
+    await cacheDeletePattern('sentinelx:reports:*');
     res.json({ success: true, data: asset, message: 'Asset updated successfully.' });
   } catch (error) {
     next(error);
@@ -60,6 +67,9 @@ export async function deleteAsset(req: AuthRequest, res: Response<ApiResponse>, 
     await assetService.delete(req.params.id);
     emitEvent('asset:deleted', { id: req.params.id });
     emitEvent('dashboard:statsChanged', { type: 'asset' });
+    await cacheDeletePattern('sentinelx:assets:*');
+    await cacheDeletePattern('sentinelx:analytics:*');
+    await cacheDeletePattern('sentinelx:reports:*');
     res.json({ success: true, message: 'Asset deleted successfully.' });
   } catch (error) {
     next(error);

@@ -2,6 +2,7 @@ import { createServer } from 'http';
 import app from './app';
 import { env } from './config/env';
 import { prisma } from './config/database';
+import { closeRedis } from './config/redis';
 import { initializeSocket } from './utils/socket';
 
 async function main() {
@@ -20,6 +21,7 @@ async function main() {
       console.log('SIGTERM received. Shutting down gracefully...');
       httpServer.close(async () => {
         await prisma.$disconnect();
+        await closeRedis();
         process.exit(0);
       });
     });
@@ -28,6 +30,7 @@ async function main() {
       console.log('SIGINT received. Shutting down gracefully...');
       httpServer.close(async () => {
         await prisma.$disconnect();
+        await closeRedis();
         process.exit(0);
       });
     });
@@ -43,6 +46,7 @@ async function main() {
   } catch (error) {
     console.error('Failed to start server:', error);
     await prisma.$disconnect();
+    await closeRedis();
     process.exit(1);
   }
 }

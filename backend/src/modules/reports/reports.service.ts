@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { generateIncidentPDF, generateAssetPDF, generateExecutiveSummaryPDF } from '../../utils/pdf';
+import { withCache, cacheKey } from '../../utils/cache';
 
 import type { $Enums } from '@prisma/client';
 
@@ -37,57 +38,62 @@ export class ReportsService {
       };
     }
 
-    const [incidents, total, severityBreakdown, statusBreakdown] = await Promise.all([
-      prisma.incident.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          createdBy: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-          assignedUser: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-          assets: {
-            include: {
-              asset: {
-                select: { id: true, assetName: true, assetType: true, ipAddress: true, status: true, criticality: true },
+    const filterKey = JSON.stringify(filters);
+    const cache = withCache(cacheKey('reports', 'incidents', filterKey), 120);
+
+    return cache.get(async () => {
+      const [incidents, total, severityBreakdown, statusBreakdown] = await Promise.all([
+        prisma.incident.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            createdBy: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+            assignedUser: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+            assets: {
+              include: {
+                asset: {
+                  select: { id: true, assetName: true, assetType: true, ipAddress: true, status: true, criticality: true },
+                },
               },
             },
           },
-        },
-      }),
-      prisma.incident.count({ where }),
-      Promise.all([
-        prisma.incident.count({ where: { ...where, severity: 'CRITICAL' } }),
-        prisma.incident.count({ where: { ...where, severity: 'HIGH' } }),
-        prisma.incident.count({ where: { ...where, severity: 'MEDIUM' } }),
-        prisma.incident.count({ where: { ...where, severity: 'LOW' } }),
-      ]),
-      Promise.all([
-        prisma.incident.count({ where: { ...where, status: 'OPEN' } }),
-        prisma.incident.count({ where: { ...where, status: 'IN_PROGRESS' } }),
-        prisma.incident.count({ where: { ...where, status: 'RESOLVED' } }),
-        prisma.incident.count({ where: { ...where, status: 'CLOSED' } }),
-      ]),
-    ]);
+        }),
+        prisma.incident.count({ where }),
+        Promise.all([
+          prisma.incident.count({ where: { ...where, severity: 'CRITICAL' } }),
+          prisma.incident.count({ where: { ...where, severity: 'HIGH' } }),
+          prisma.incident.count({ where: { ...where, severity: 'MEDIUM' } }),
+          prisma.incident.count({ where: { ...where, severity: 'LOW' } }),
+        ]),
+        Promise.all([
+          prisma.incident.count({ where: { ...where, status: 'OPEN' } }),
+          prisma.incident.count({ where: { ...where, status: 'IN_PROGRESS' } }),
+          prisma.incident.count({ where: { ...where, status: 'RESOLVED' } }),
+          prisma.incident.count({ where: { ...where, status: 'CLOSED' } }),
+        ]),
+      ]);
 
-    return {
-      data: incidents,
-      total,
-      severityBreakdown: {
-        critical: severityBreakdown[0],
-        high: severityBreakdown[1],
-        medium: severityBreakdown[2],
-        low: severityBreakdown[3],
-      },
-      statusBreakdown: {
-        open: statusBreakdown[0],
-        inProgress: statusBreakdown[1],
-        resolved: statusBreakdown[2],
-        closed: statusBreakdown[3],
-      },
-    };
+      return {
+        data: incidents,
+        total,
+        severityBreakdown: {
+          critical: severityBreakdown[0],
+          high: severityBreakdown[1],
+          medium: severityBreakdown[2],
+          low: severityBreakdown[3],
+        },
+        statusBreakdown: {
+          open: statusBreakdown[0],
+          inProgress: statusBreakdown[1],
+          resolved: statusBreakdown[2],
+          closed: statusBreakdown[3],
+        },
+      };
+    });
   }
 
   async getAssetsReport(filters: ReportFilters) {
@@ -99,55 +105,60 @@ export class ReportsService {
     const dateFilter = buildDateFilter(filters.startDate, filters.endDate);
     if (dateFilter) where.createdAt = dateFilter;
 
-    const [assets, total, typeBreakdown, criticalityBreakdown] = await Promise.all([
-      prisma.asset.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          _count: { select: { incidents: true } },
-        },
-      }),
-      prisma.asset.count({ where }),
-      Promise.all([
-        prisma.asset.count({ where: { ...where, assetType: 'SERVER' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'WORKSTATION' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'LAPTOP' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'FIREWALL' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'SWITCH' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'ROUTER' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'CLOUD_VM' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'DATABASE' } }),
-        prisma.asset.count({ where: { ...where, assetType: 'OTHER' } }),
-      ]),
-      Promise.all([
-        prisma.asset.count({ where: { ...where, criticality: 'CRITICAL' } }),
-        prisma.asset.count({ where: { ...where, criticality: 'HIGH' } }),
-        prisma.asset.count({ where: { ...where, criticality: 'MEDIUM' } }),
-        prisma.asset.count({ where: { ...where, criticality: 'LOW' } }),
-      ]),
-    ]);
+    const filterKey = JSON.stringify(filters);
+    const cache = withCache(cacheKey('reports', 'assets', filterKey), 120);
 
-    return {
-      data: assets,
-      total,
-      typeBreakdown: {
-        server: typeBreakdown[0],
-        workstation: typeBreakdown[1],
-        laptop: typeBreakdown[2],
-        firewall: typeBreakdown[3],
-        switch: typeBreakdown[4],
-        router: typeBreakdown[5],
-        cloudVm: typeBreakdown[6],
-        database: typeBreakdown[7],
-        other: typeBreakdown[8],
-      },
-      criticalityBreakdown: {
-        critical: criticalityBreakdown[0],
-        high: criticalityBreakdown[1],
-        medium: criticalityBreakdown[2],
-        low: criticalityBreakdown[3],
-      },
-    };
+    return cache.get(async () => {
+      const [assets, total, typeBreakdown, criticalityBreakdown] = await Promise.all([
+        prisma.asset.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            _count: { select: { incidents: true } },
+          },
+        }),
+        prisma.asset.count({ where }),
+        Promise.all([
+          prisma.asset.count({ where: { ...where, assetType: 'SERVER' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'WORKSTATION' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'LAPTOP' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'FIREWALL' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'SWITCH' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'ROUTER' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'CLOUD_VM' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'DATABASE' } }),
+          prisma.asset.count({ where: { ...where, assetType: 'OTHER' } }),
+        ]),
+        Promise.all([
+          prisma.asset.count({ where: { ...where, criticality: 'CRITICAL' } }),
+          prisma.asset.count({ where: { ...where, criticality: 'HIGH' } }),
+          prisma.asset.count({ where: { ...where, criticality: 'MEDIUM' } }),
+          prisma.asset.count({ where: { ...where, criticality: 'LOW' } }),
+        ]),
+      ]);
+
+      return {
+        data: assets,
+        total,
+        typeBreakdown: {
+          server: typeBreakdown[0],
+          workstation: typeBreakdown[1],
+          laptop: typeBreakdown[2],
+          firewall: typeBreakdown[3],
+          switch: typeBreakdown[4],
+          router: typeBreakdown[5],
+          cloudVm: typeBreakdown[6],
+          database: typeBreakdown[7],
+          other: typeBreakdown[8],
+        },
+        criticalityBreakdown: {
+          critical: criticalityBreakdown[0],
+          high: criticalityBreakdown[1],
+          medium: criticalityBreakdown[2],
+          low: criticalityBreakdown[3],
+        },
+      };
+    });
   }
 
   async getSummaryReport(filters: ReportFilters) {
@@ -171,35 +182,40 @@ export class ReportsService {
 
     if (assetDateFilter) assetWhere.createdAt = assetDateFilter;
 
-    const [totalIncidents, openIncidents, criticalIncidents, totalAssets, activeAssets, criticalAssets, recentIncidents] = await Promise.all([
-      prisma.incident.count({ where: incidentWhere }),
-      prisma.incident.count({ where: { ...incidentWhere, status: 'OPEN' } }),
-      prisma.incident.count({ where: { ...incidentWhere, severity: 'CRITICAL' } }),
-      prisma.asset.count({ where: assetWhere }),
-      prisma.asset.count({ where: { ...assetWhere, status: 'ACTIVE' } }),
-      prisma.asset.count({ where: { ...assetWhere, criticality: 'CRITICAL' } }),
-      prisma.incident.findMany({
-        where: incidentWhere,
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: {
-          createdBy: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-          },
-        },
-      }),
-    ]);
+    const filterKey = JSON.stringify(filters);
+    const cache = withCache(cacheKey('reports', 'summary', filterKey), 120);
 
-    return {
-      totalIncidents,
-      openIncidents,
-      criticalIncidents,
-      totalAssets,
-      activeAssets,
-      criticalAssets,
-      recentIncidents,
-      reportGeneratedAt: new Date().toISOString(),
-    };
+    return cache.get(async () => {
+      const [totalIncidents, openIncidents, criticalIncidents, totalAssets, activeAssets, criticalAssets, recentIncidents] = await Promise.all([
+        prisma.incident.count({ where: incidentWhere }),
+        prisma.incident.count({ where: { ...incidentWhere, status: 'OPEN' } }),
+        prisma.incident.count({ where: { ...incidentWhere, severity: 'CRITICAL' } }),
+        prisma.asset.count({ where: assetWhere }),
+        prisma.asset.count({ where: { ...assetWhere, status: 'ACTIVE' } }),
+        prisma.asset.count({ where: { ...assetWhere, criticality: 'CRITICAL' } }),
+        prisma.incident.findMany({
+          where: incidentWhere,
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: {
+            createdBy: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+          },
+        }),
+      ]);
+
+      return {
+        totalIncidents,
+        openIncidents,
+        criticalIncidents,
+        totalAssets,
+        activeAssets,
+        criticalAssets,
+        recentIncidents,
+        reportGeneratedAt: new Date().toISOString(),
+      };
+    });
   }
 
   async exportReport(type: string, format: string, filters: ReportFilters = {}) {

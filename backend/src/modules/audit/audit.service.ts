@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import type { AuthRequest } from '../../types';

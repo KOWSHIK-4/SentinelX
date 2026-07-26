@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { withCache, cacheKey } from '../../utils/cache';
 import type { AuthRequest } from '../../types';
 
 const incidentInclude = {
@@ -91,8 +92,11 @@ export class IncidentService {
       }
     }
 
+    const allowedSortFields = ['createdAt', 'updatedAt', 'severity', 'status', 'title'];
+    const sortBy = allowedSortFields.includes(query.sortBy) ? query.sortBy : 'createdAt';
+
     const orderBy: Prisma.IncidentOrderByWithRelationInput = {
-      [query.sortBy]: query.sortOrder,
+      [sortBy]: query.sortOrder,
     };
 
     const skip = (query.page - 1) * query.limit;
@@ -102,7 +106,7 @@ export class IncidentService {
         where,
         orderBy,
         skip,
-        take: query.limit,
+        take: Math.min(query.limit, 100),
         include: incidentInclude,
       }),
       prisma.incident.count({ where }),
@@ -181,40 +185,48 @@ export class IncidentService {
   }
 
   async getDashboardStats() {
-    const [
-      total,
-      open,
-      inProgress,
-      resolved,
-      critical,
-      high,
-      recentIncidents,
-    ] = await Promise.all([
-      prisma.incident.count(),
-      prisma.incident.count({ where: { status: 'OPEN' } }),
-      prisma.incident.count({ where: { status: 'IN_PROGRESS' } }),
-      prisma.incident.count({ where: { status: 'RESOLVED' } }),
-      prisma.incident.count({ where: { severity: 'CRITICAL' } }),
-      prisma.incident.count({ where: { severity: 'HIGH' } }),
-      prisma.incident.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: {
-          createdBy: {
-            select: { id: true, firstName: true, lastName: true },
-          },
-        },
-      }),
-    ]);
+    const cache = withCache(cacheKey('incidents', 'stats'), 30);
 
-    return {
-      totalIncidents: total,
-      openIncidents: open,
-      inProgressIncidents: inProgress,
-      resolvedIncidents: resolved,
-      criticalIncidents: critical,
-      highIncidents: high,
-      recentIncidents,
-    };
+    return cache.get(async () => {
+      const [
+        total,
+        open,
+        inProgress,
+        resolved,
+        critical,
+        high,
+        recentIncidents,
+      ] = await Promise.all([
+        prisma.incident.count(),
+        prisma.incident.count({ where: { status: 'OPEN' } }),
+        prisma.incident.count({ where: { status: 'IN_PROGRESS' } }),
+        prisma.incident.count({ where: { status: 'RESOLVED' } }),
+        prisma.incident.count({ where: { severity: 'CRITICAL' } }),
+        prisma.incident.count({ where: { severity: 'HIGH' } }),
+        prisma.incident.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: {
+            createdBy: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+          },
+        }),
+      ]);
+
+      return {
+        totalIncidents: total,
+        openIncidents: open,
+        inProgressIncidents: inProgress,
+        resolvedIncidents: resolved,
+        criticalIncidents: critical,
+        highIncidents: high,
+        recentIncidents,
+      };
+    });
+  }
+
+  async invalidateCache() {
+    await withCache(cacheKey('incidents', 'stats')).invalidate();
   }
 }

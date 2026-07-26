@@ -5,6 +5,7 @@ import { AuthRequest, ApiResponse } from '../../types';
 import { incidentQuerySchema } from './incident.schema';
 import { createAuditLog } from '../audit/audit.service';
 import { emitEvent } from '../../utils/socket';
+import { cacheDeletePattern } from '../../config/redis';
 
 type IncidentQuery = z.infer<typeof incidentQuerySchema>;
 
@@ -16,6 +17,9 @@ export async function createIncident(req: AuthRequest, res: Response<ApiResponse
     await createAuditLog(req, 'Create Incident', 'Incident', incident.id, `Created incident: ${incident.title}`, 'Info');
     emitEvent('incident:created', incident);
     emitEvent('dashboard:statsChanged', { type: 'incident' });
+    await cacheDeletePattern('sentinelx:incidents:*');
+    await cacheDeletePattern('sentinelx:analytics:*');
+    await cacheDeletePattern('sentinelx:reports:*');
     res.status(201).json({ success: true, data: incident, message: 'Incident created successfully.' });
   } catch (error) {
     next(error);
@@ -49,6 +53,9 @@ export async function updateIncident(req: AuthRequest, res: Response<ApiResponse
     const eventName = incident.status === 'RESOLVED' ? 'incident:resolved' : 'incident:updated';
     emitEvent(eventName, incident);
     emitEvent('dashboard:statsChanged', { type: 'incident' });
+    await cacheDeletePattern('sentinelx:incidents:*');
+    await cacheDeletePattern('sentinelx:analytics:*');
+    await cacheDeletePattern('sentinelx:reports:*');
 
     res.json({ success: true, data: incident, message: 'Incident updated successfully.' });
   } catch (error) {
@@ -63,6 +70,9 @@ export async function deleteIncident(req: AuthRequest, res: Response<ApiResponse
     await incidentService.delete(req.params.id);
     emitEvent('incident:deleted', { id: req.params.id });
     emitEvent('dashboard:statsChanged', { type: 'incident' });
+    await cacheDeletePattern('sentinelx:incidents:*');
+    await cacheDeletePattern('sentinelx:analytics:*');
+    await cacheDeletePattern('sentinelx:reports:*');
     res.json({ success: true, message: 'Incident deleted successfully.' });
   } catch (error) {
     next(error);

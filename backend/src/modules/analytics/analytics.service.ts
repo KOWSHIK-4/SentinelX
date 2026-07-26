@@ -1,105 +1,117 @@
 import { prisma } from '../../config/database';
+import { withCache, cacheKey } from '../../utils/cache';
 
 export class AnalyticsService {
   async getOverview() {
-    const [
-      totalIncidents,
-      openIncidents,
-      inProgressIncidents,
-      resolvedIncidents,
-      closedIncidents,
-      criticalIncidents,
-      highIncidents,
-      mediumIncidents,
-      lowIncidents,
-      totalAssets,
-      activeAssets,
-      maintenanceAssets,
-      retiredAssets,
-      criticalAssets,
-      totalUsers,
-    ] = await Promise.all([
-      prisma.incident.count(),
-      prisma.incident.count({ where: { status: 'OPEN' } }),
-      prisma.incident.count({ where: { status: 'IN_PROGRESS' } }),
-      prisma.incident.count({ where: { status: 'RESOLVED' } }),
-      prisma.incident.count({ where: { status: 'CLOSED' } }),
-      prisma.incident.count({ where: { severity: 'CRITICAL' } }),
-      prisma.incident.count({ where: { severity: 'HIGH' } }),
-      prisma.incident.count({ where: { severity: 'MEDIUM' } }),
-      prisma.incident.count({ where: { severity: 'LOW' } }),
-      prisma.asset.count(),
-      prisma.asset.count({ where: { status: 'ACTIVE' } }),
-      prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
-      prisma.asset.count({ where: { status: 'RETIRED' } }),
-      prisma.asset.count({ where: { criticality: 'CRITICAL' } }),
-      prisma.user.count({ where: { isActive: true } }),
-    ]);
+    const cache = withCache(cacheKey('analytics', 'overview'), 60);
 
-    return {
-      totalIncidents,
-      openIncidents,
-      inProgressIncidents,
-      resolvedIncidents,
-      closedIncidents,
-      criticalIncidents,
-      highIncidents,
-      mediumIncidents,
-      lowIncidents,
-      totalAssets,
-      activeAssets,
-      maintenanceAssets,
-      retiredAssets,
-      criticalAssets,
-      totalUsers,
-    };
+    return cache.get(async () => {
+      const [
+        totalIncidents,
+        openIncidents,
+        inProgressIncidents,
+        resolvedIncidents,
+        closedIncidents,
+        criticalIncidents,
+        highIncidents,
+        mediumIncidents,
+        lowIncidents,
+        totalAssets,
+        activeAssets,
+        maintenanceAssets,
+        retiredAssets,
+        criticalAssets,
+        totalUsers,
+      ] = await Promise.all([
+        prisma.incident.count(),
+        prisma.incident.count({ where: { status: 'OPEN' } }),
+        prisma.incident.count({ where: { status: 'IN_PROGRESS' } }),
+        prisma.incident.count({ where: { status: 'RESOLVED' } }),
+        prisma.incident.count({ where: { status: 'CLOSED' } }),
+        prisma.incident.count({ where: { severity: 'CRITICAL' } }),
+        prisma.incident.count({ where: { severity: 'HIGH' } }),
+        prisma.incident.count({ where: { severity: 'MEDIUM' } }),
+        prisma.incident.count({ where: { severity: 'LOW' } }),
+        prisma.asset.count(),
+        prisma.asset.count({ where: { status: 'ACTIVE' } }),
+        prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
+        prisma.asset.count({ where: { status: 'RETIRED' } }),
+        prisma.asset.count({ where: { criticality: 'CRITICAL' } }),
+        prisma.user.count({ where: { isActive: true } }),
+      ]);
+
+      return {
+        totalIncidents,
+        openIncidents,
+        inProgressIncidents,
+        resolvedIncidents,
+        closedIncidents,
+        criticalIncidents,
+        highIncidents,
+        mediumIncidents,
+        lowIncidents,
+        totalAssets,
+        activeAssets,
+        maintenanceAssets,
+        retiredAssets,
+        criticalAssets,
+        totalUsers,
+      };
+    });
   }
 
   async getIncidents() {
-    const severityDist = await prisma.incident.groupBy({
-      by: ['severity'],
-      _count: { id: true },
+    const cache = withCache(cacheKey('analytics', 'incidents'), 60);
+
+    return cache.get(async () => {
+      const severityDist = await prisma.incident.groupBy({
+        by: ['severity'],
+        _count: { id: true },
+      });
+
+      const statusDist = await prisma.incident.groupBy({
+        by: ['status'],
+        _count: { id: true },
+      });
+
+      const severityMap = severityDist.reduce(
+        (acc, s) => {
+          acc[s.severity.toLowerCase()] = s._count.id;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const statusMap = statusDist.reduce(
+        (acc, s) => {
+          acc[s.status.toLowerCase()] = s._count.id;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      return {
+        severityDistribution: {
+          critical: severityMap.critical || 0,
+          high: severityMap.high || 0,
+          medium: severityMap.medium || 0,
+          low: severityMap.low || 0,
+        },
+        statusDistribution: {
+          open: statusMap.open || 0,
+          inProgress: statusMap.in_progress || 0,
+          resolved: statusMap.resolved || 0,
+          closed: statusMap.closed || 0,
+        },
+      };
     });
-
-    const statusDist = await prisma.incident.groupBy({
-      by: ['status'],
-      _count: { id: true },
-    });
-
-    const severityMap = severityDist.reduce(
-      (acc, s) => {
-        acc[s.severity.toLowerCase()] = s._count.id;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    const statusMap = statusDist.reduce(
-      (acc, s) => {
-        acc[s.status.toLowerCase()] = s._count.id;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    return {
-      severityDistribution: {
-        critical: severityMap.critical || 0,
-        high: severityMap.high || 0,
-        medium: severityMap.medium || 0,
-        low: severityMap.low || 0,
-      },
-      statusDistribution: {
-        open: statusMap.open || 0,
-        inProgress: statusMap.in_progress || 0,
-        resolved: statusMap.resolved || 0,
-        closed: statusMap.closed || 0,
-      },
-    };
   }
 
   async getAssets() {
-    const assetsByType = await prisma.asset.groupBy({
+    const cache = withCache(cacheKey('analytics', 'assets'), 60);
+
+    return cache.get(async () => {
+      const assetsByType = await prisma.asset.groupBy({
       by: ['assetType'],
       _count: { id: true },
     });
@@ -152,13 +164,17 @@ export class AnalyticsService {
       {} as Record<string, number>,
     );
 
-    return {
-      assetsByType: typeMap,
-      topAffectedAssets,
-    };
+      return {
+        assetsByType: typeMap,
+        topAffectedAssets,
+      };
+    });
   }
 
   async getTrends() {
+    const cache = withCache(cacheKey('analytics', 'trends'), 120);
+
+    return cache.get(async () => {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -200,6 +216,7 @@ export class AnalyticsService {
       },
     });
 
-    return { trend, recentActivity };
+      return { trend, recentActivity };
+    });
   }
 }

@@ -28,6 +28,12 @@ const app = express();
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  xssFilter: true,
+  noSniff: true,
+  hidePoweredBy: true,
+  frameguard: { action: 'deny' },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
 const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
@@ -38,16 +44,18 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
       } else {
-        callback(null, false);
+        callback(new Error('Not allowed by CORS'), false);
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400,
   }),
 );
 
 app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 app.use(correlationId);
 

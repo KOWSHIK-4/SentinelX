@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { withCache, cacheKey } from '../../utils/cache';
 
 import type { $Enums } from '@prisma/client';
 
@@ -70,8 +71,11 @@ export class AssetService {
       where.criticality = query.criticality as $Enums.Criticality;
     }
 
+    const allowedSortFields = ['assetName', 'assetType', 'criticality', 'status', 'createdAt', 'updatedAt'];
+    const sortBy = allowedSortFields.includes(query.sortBy) ? query.sortBy : 'createdAt';
+
     const orderBy: Prisma.AssetOrderByWithRelationInput = {
-      [query.sortBy]: query.sortOrder,
+      [sortBy]: query.sortOrder,
     };
 
     const skip = (query.page - 1) * query.limit;
@@ -81,7 +85,7 @@ export class AssetService {
         where,
         orderBy,
         skip,
-        take: query.limit,
+        take: Math.min(query.limit, 100),
       }),
       prisma.asset.count({ where }),
     ]);
@@ -137,12 +141,6 @@ export class AssetService {
     location?: string | null;
     description?: string | null;
   }) {
-    const existing = await prisma.asset.findUnique({ where: { id } });
-
-    if (!existing) {
-      throw new AppError('Asset not found.', 404);
-    }
-
     const updateData: Prisma.AssetUncheckedUpdateInput = {};
 
     if (data.assetName !== undefined) updateData.assetName = data.assetName;
@@ -174,27 +172,31 @@ export class AssetService {
   }
 
   async getDashboardStats() {
-    const [total, active, maintenance, retired, critical, high, recentAssets] = await Promise.all([
-      prisma.asset.count(),
-      prisma.asset.count({ where: { status: 'ACTIVE' } }),
-      prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
-      prisma.asset.count({ where: { status: 'RETIRED' } }),
-      prisma.asset.count({ where: { criticality: 'CRITICAL' } }),
-      prisma.asset.count({ where: { criticality: 'HIGH' } }),
-      prisma.asset.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-      }),
-    ]);
+    const cache = withCache(cacheKey('assets', 'stats'), 30);
 
-    return {
-      totalAssets: total,
-      activeAssets: active,
-      maintenanceAssets: maintenance,
-      retiredAssets: retired,
-      criticalAssets: critical,
-      highAssets: high,
-      recentAssets,
-    };
+    return cache.get(async () => {
+      const [total, active, maintenance, retired, critical, high, recentAssets] = await Promise.all([
+        prisma.asset.count(),
+        prisma.asset.count({ where: { status: 'ACTIVE' } }),
+        prisma.asset.count({ where: { status: 'MAINTENANCE' } }),
+        prisma.asset.count({ where: { status: 'RETIRED' } }),
+        prisma.asset.count({ where: { criticality: 'CRITICAL' } }),
+        prisma.asset.count({ where: { criticality: 'HIGH' } }),
+        prisma.asset.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        }),
+      ]);
+
+      return {
+        totalAssets: total,
+        activeAssets: active,
+        maintenanceAssets: maintenance,
+        retiredAssets: retired,
+        criticalAssets: critical,
+        highAssets: high,
+        recentAssets,
+      };
+    });
   }
 }
