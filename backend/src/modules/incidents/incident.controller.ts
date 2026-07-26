@@ -66,8 +66,8 @@ export async function updateIncident(req: AuthRequest, res: Response<ApiResponse
 export async function deleteIncident(req: AuthRequest, res: Response<ApiResponse>, next: NextFunction) {
   try {
     const incident = await incidentService.findById(req.params.id);
-    await createAuditLog(req, 'Delete Incident', 'Incident', req.params.id, `Deleted incident: ${incident.title}`, 'Warning');
     await incidentService.delete(req.params.id);
+    await createAuditLog(req, 'Delete Incident', 'Incident', req.params.id, `Deleted incident: ${incident.title}`, 'Warning');
     emitEvent('incident:deleted', { id: req.params.id });
     emitEvent('dashboard:statsChanged', { type: 'incident' });
     await cacheDeletePattern('sentinelx:incidents:*');

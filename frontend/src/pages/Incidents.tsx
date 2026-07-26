@@ -59,6 +59,14 @@ export function Incidents() {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const [filters, setFilters] = useState({ search: '', status: '', severity: '' });
   const [page, setPage] = useState(1);
@@ -81,6 +89,10 @@ export function Incidents() {
       if (filters.search) params.search = filters.search;
       if (filters.status) params.status = filters.status;
       if (filters.severity) params.severity = filters.severity;
+      if (sortField) {
+        params.sortBy = sortField;
+        params.sortOrder = sortDirection;
+      }
       const res = await incidentApi.list(params);
       setIncidents(res.data);
       setPagination(res.pagination);
@@ -89,7 +101,7 @@ export function Incidents() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, filters]);
+  }, [page, limit, filters, sortField, sortDirection]);
 
   useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
   useEffect(() => { setPage(1); }, [filters, limit]);
@@ -97,8 +109,9 @@ export function Incidents() {
   const handleCreate = async (data: { title: string; description: string; status: string; severity: string }) => {
     setSaving(true);
     try {
-      await incidentApi.create(data);
+      const res = await incidentApi.create(data);
       setShowForm(false);
+      setSuccess(res.message || 'Incident created successfully.');
       fetchIncidents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create incident.');
@@ -109,9 +122,10 @@ export function Incidents() {
     if (!editingIncident) return;
     setSaving(true);
     try {
-      await incidentApi.update(editingIncident.id, data);
+      const res = await incidentApi.update(editingIncident.id, data);
       setEditingIncident(null);
       setShowForm(false);
+      setSuccess(res.message || 'Incident updated successfully.');
       fetchIncidents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update incident.');
@@ -122,8 +136,9 @@ export function Incidents() {
     if (!deletingIncident) return;
     setDeleting(true);
     try {
-      await incidentApi.delete(deletingIncident.id);
+      const res = await incidentApi.delete(deletingIncident.id);
       setDeletingIncident(null);
+      setSuccess(res.message || 'Incident deleted successfully.');
       fetchIncidents();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete incident.');
@@ -138,14 +153,6 @@ export function Incidents() {
       setSortDirection('desc');
     }
   };
-
-  const sortedIncidents = [...incidents].sort((a, b) => {
-    if (!sortField) return 0;
-    const dir = sortDirection === 'asc' ? 1 : -1;
-    const aVal = String(a[sortField as keyof Incident] ?? '');
-    const bVal = String(b[sortField as keyof Incident] ?? '');
-    return aVal.localeCompare(bVal) * dir;
-  });
 
   return (
     <div className="space-y-6">
@@ -201,6 +208,11 @@ export function Incidents() {
           </div>
         </CardHeader>
         <CardContent>
+          {success && (
+            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-3 mb-4" role="status">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400">{success}</p>
+            </div>
+          )}
           {error && (
             <div className="rounded-md bg-destructive/10 p-3 mb-4" role="alert">
               <p className="text-sm text-destructive">{error}</p>
@@ -209,7 +221,7 @@ export function Incidents() {
 
           {loading ? (
             <TableSkeleton rows={5} columns={5} />
-          ) : sortedIncidents.length === 0 ? (
+          ) : incidents.length === 0 ? (
             <TableEmptyState
               icon={AlertTriangle}
               title="No incidents found"
@@ -230,7 +242,7 @@ export function Incidents() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedIncidents.map((incident) => (
+                    {incidents.map((incident) => (
                       <TableRow key={incident.id}>
                         <TableCell className="font-medium">
                           <button
