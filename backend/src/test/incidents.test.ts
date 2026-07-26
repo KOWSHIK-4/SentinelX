@@ -10,7 +10,25 @@ let testIncidentId: string;
 
 const adminUser = { email: 'admin@sentinelx.io', password: 'Admin123!' };
 
-async function registerAndAssignRole(email: string, roleName: string) {
+async function ensureRoleWithPermissions(roleName: string, permissions: { resource: string; action: string }[]) {
+  let role = await prisma.role.findUnique({ where: { name: roleName } });
+  if (!role) {
+    role = await prisma.role.create({ data: { name: roleName, description: roleName } });
+  } else {
+    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
+  }
+  for (const { resource, action } of permissions) {
+    const permName = `${resource}:${action}`;
+    let perm = await prisma.permission.findUnique({ where: { name: permName } });
+    if (!perm) {
+      perm = await prisma.permission.create({ data: { name: permName, resource, action } });
+    }
+    await prisma.rolePermission.create({ data: { roleId: role.id, permissionId: perm.id } });
+  }
+  return role;
+}
+
+async function registerAndAssignRole(email: string, roleName: string, requiredPermissions: { resource: string; action: string }[]) {
   const res = await request(app)
     .post('/api/auth/register')
     .send({
@@ -22,16 +40,13 @@ async function registerAndAssignRole(email: string, roleName: string) {
 
   const userId = res.body.data.user.id;
 
-  if (roleName !== 'Viewer') {
-    const role = await prisma.role.findUnique({ where: { name: roleName } });
-    if (role) {
-      const existing = await prisma.userRole.findUnique({
-        where: { userId_roleId: { userId, roleId: role.id } },
-      });
-      if (!existing) {
-        await prisma.userRole.create({ data: { userId, roleId: role.id } });
-      }
-    }
+  const role = await ensureRoleWithPermissions(roleName, requiredPermissions);
+
+  const existing = await prisma.userRole.findUnique({
+    where: { userId_roleId: { userId, roleId: role.id } },
+  });
+  if (!existing) {
+    await prisma.userRole.create({ data: { userId, roleId: role.id } });
   }
 
   return res.body.data.token;
@@ -39,13 +54,24 @@ async function registerAndAssignRole(email: string, roleName: string) {
 
 describe('Incidents API', () => {
   beforeAll(async () => {
+    await ensureRoleWithPermissions('Admin', [
+      { resource: 'incidents', action: 'read' },
+      { resource: 'incidents', action: 'write' },
+      { resource: 'incidents', action: 'delete' },
+    ]);
+
     const adminRes = await request(app)
       .post('/api/auth/login')
       .send(adminUser);
     adminToken = adminRes.body.data.token;
 
-    analystToken = await registerAndAssignRole(`analyst-${Date.now()}@test.com`, 'Analyst');
-    viewerToken = await registerAndAssignRole(`viewer-${Date.now()}@test.com`, 'Viewer');
+    analystToken = await registerAndAssignRole(`analyst-${Date.now()}@test.com`, 'Analyst', [
+      { resource: 'incidents', action: 'read' },
+      { resource: 'incidents', action: 'write' },
+    ]);
+    viewerToken = await registerAndAssignRole(`viewer-${Date.now()}@test.com`, 'Viewer', [
+      { resource: 'incidents', action: 'read' },
+    ]);
   });
 
   describe('POST /api/incidents', () => {

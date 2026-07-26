@@ -21,22 +21,19 @@ async function main() {
 
     const permissions = [
       { name: 'incidents:read', resource: 'incidents', action: 'read' },
-      { name: 'incidents:create', resource: 'incidents', action: 'create' },
-      { name: 'incidents:update', resource: 'incidents', action: 'update' },
+      { name: 'incidents:write', resource: 'incidents', action: 'write' },
       { name: 'incidents:delete', resource: 'incidents', action: 'delete' },
       { name: 'assets:read', resource: 'assets', action: 'read' },
-      { name: 'assets:create', resource: 'assets', action: 'create' },
-      { name: 'assets:update', resource: 'assets', action: 'update' },
-      { name: 'assets:delete', resource: 'assets', action: 'delete' },
+      { name: 'assets:write', resource: 'assets', action: 'write' },
       { name: 'analytics:read', resource: 'analytics', action: 'read' },
       { name: 'reports:read', resource: 'reports', action: 'read' },
-      { name: 'reports:create', resource: 'reports', action: 'create' },
-      { name: 'reports:delete', resource: 'reports', action: 'delete' },
+      { name: 'reports:export', resource: 'reports', action: 'export' },
       { name: 'team:read', resource: 'team', action: 'read' },
       { name: 'team:manage', resource: 'team', action: 'manage' },
       { name: 'settings:read', resource: 'settings', action: 'read' },
-      { name: 'settings:manage', resource: 'settings', action: 'manage' },
+      { name: 'settings:update', resource: 'settings', action: 'update' },
       { name: 'users:manage', resource: 'users', action: 'manage' },
+      { name: 'audit:read', resource: 'audit', action: 'read' },
     ];
 
     for (const perm of permissions) {
@@ -44,16 +41,17 @@ async function main() {
     }
 
     const allPermissions = await prisma.permission.findMany();
-    const viewPermissions = allPermissions.filter((p) => p.action === 'read');
 
-    for (const perm of viewPermissions) {
-      await prisma.rolePermission.create({
-        data: { roleId: viewerRole.id, permissionId: perm.id },
-      });
+    for (const perm of allPermissions) {
+      if (perm.action === 'read') {
+        await prisma.rolePermission.create({
+          data: { roleId: viewerRole.id, permissionId: perm.id },
+        });
+      }
     }
 
     for (const perm of allPermissions) {
-      if (perm.action !== 'manage' || perm.resource === 'team' || perm.resource === 'settings') {
+      if (perm.action !== 'manage' || perm.resource === 'users') {
         await prisma.rolePermission.create({
           data: { roleId: analystRole.id, permissionId: perm.id },
         });

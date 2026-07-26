@@ -27,6 +27,6 @@ export const incidentQuerySchema = z.object({
   search: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  sortBy: z.enum(['createdAt', 'updatedAt', 'severity', 'status']).default('createdAt'),
+  sortBy: z.enum(['createdAt', 'updatedAt', 'severity', 'status', 'title']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });

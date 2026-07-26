@@ -37,6 +37,12 @@ vi.mock('@/lib/api', () => {
         },
       }),
     },
+    notificationApi: {
+      list: () => Promise.resolve({ success: true, data: [] }),
+    },
+    auditApi: {
+      list: () => Promise.resolve({ success: true, data: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 0 } }),
+    },
     api: vi.fn(),
     authApi: {},
   };
@@ -70,7 +76,7 @@ describe('Dashboard', () => {
     renderWithProviders(<Dashboard />);
     await waitFor(() => {
       expect(screen.getByText('Total Incidents')).toBeInTheDocument();
-      expect(screen.getByText('Open Incidents')).toBeInTheDocument();
+      expect(screen.getAllByText('Open Incidents').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Resolved').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Critical').length).toBe(2);
     });
@@ -79,7 +85,7 @@ describe('Dashboard', () => {
   it('should show recent incidents', async () => {
     renderWithProviders(<Dashboard />);
     await waitFor(() => {
-      expect(screen.getByText('Test Incident')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Incident').length).toBeGreaterThanOrEqual(1);
     });
   });
 
