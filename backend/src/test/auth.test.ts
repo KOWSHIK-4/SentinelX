@@ -25,7 +25,7 @@ describe('Authentication API', () => {
       expect(res.body.data.user.firstName).toBe(testUser.firstName);
       expect(res.body.data.token).toBeDefined();
       expect(res.body.data.user.roles).toBeDefined();
-      expect(res.body.data.user.roles[0].name).toBe('Viewer');
+      expect(res.body.data.user.roles).toHaveLength(0);
 
       authToken = res.body.data.token;
     });

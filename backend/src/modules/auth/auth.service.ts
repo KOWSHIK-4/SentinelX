@@ -29,18 +29,9 @@ export class AuthService {
       },
     });
 
-    const viewerRole = await prisma.role.findUnique({ where: { name: 'Viewer' } });
-    if (viewerRole) {
-      await prisma.userRole.create({
-        data: { userId: user.id, roleId: viewerRole.id },
-      });
-    }
-
     const token = generateToken({ userId: user.id, email: user.email });
 
-    const roles = viewerRole ? [{ id: viewerRole.id, name: viewerRole.name }] : [];
-
-    return { user: { ...user, roles }, token };
+    return { user: { ...user, roles: [] }, token };
   }
 
   async login(email: string, password: string) {

@@ -62,9 +62,8 @@ export async function updateAsset(req: AuthRequest, res: Response<ApiResponse>, 
 
 export async function deleteAsset(req: AuthRequest, res: Response<ApiResponse>, next: NextFunction) {
   try {
-    const asset = await assetService.findById(req.params.id);
+    const asset = await assetService.delete(req.params.id);
     await createAuditLog(req, 'Delete Asset', 'Asset', req.params.id, `Deleted asset: ${asset.assetName}`, 'Warning');
-    await assetService.delete(req.params.id);
     emitEvent('asset:deleted', { id: req.params.id });
     emitEvent('dashboard:statsChanged', { type: 'asset' });
     await cacheDeletePattern('sentinelx:assets:*');

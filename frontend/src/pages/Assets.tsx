@@ -67,8 +67,8 @@ export function Assets() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [sortField, setSortField] = useState('');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const [showForm, setShowForm] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
@@ -87,13 +87,15 @@ export function Assets() {
       if (search) params.search = search;
       if (assetType) params.assetType = assetType;
       if (status) params.status = status;
+      if (sortField) params.sortBy = sortField;
+      params.sortOrder = sortDirection;
       const res = await assetApi.list(params);
       setAssets(res.data);
       setPagination(res.pagination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load assets.');
     } finally { setLoading(false); }
-  }, [page, limit, search, assetType, status]);
+  }, [page, limit, search, assetType, status, sortField, sortDirection]);
 
   useEffect(() => { fetchAssets(); }, [fetchAssets]);
   useEffect(() => { setPage(1); }, [search, assetType, status, limit]);
@@ -106,14 +108,6 @@ export function Assets() {
       setSortDirection('asc');
     }
   };
-
-  const sortedAssets = [...assets].sort((a, b) => {
-    if (!sortField) return 0;
-    const dir = sortDirection === 'asc' ? 1 : -1;
-    const aVal = String(a[sortField as keyof Asset] ?? '');
-    const bVal = String(b[sortField as keyof Asset] ?? '');
-    return aVal.localeCompare(bVal) * dir;
-  });
 
   const handleCreate = async (data: Record<string, unknown>) => {
     setSaving(true);
@@ -201,7 +195,7 @@ export function Assets() {
 
           {loading ? (
             <TableSkeleton rows={5} columns={5} />
-          ) : sortedAssets.length === 0 ? (
+          ) : assets.length === 0 ? (
             <TableEmptyState
               icon={Server}
               title="No assets found"
@@ -222,7 +216,7 @@ export function Assets() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedAssets.map((asset) => (
+                    {assets.map((asset) => (
                       <TableRow key={asset.id}>
                         <TableCell className="font-medium">
                           <button

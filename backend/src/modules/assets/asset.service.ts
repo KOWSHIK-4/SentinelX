@@ -169,6 +169,7 @@ export class AssetService {
     }
 
     await prisma.asset.delete({ where: { id } });
+    return existing;
   }
 
   async getDashboardStats() {
