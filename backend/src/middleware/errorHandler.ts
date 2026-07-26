@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
-import Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import { env } from '../config/env';
 import { ApiResponse } from '../types';
 
@@ -85,7 +85,7 @@ export function errorHandler(
       stack: err.stack,
     });
   } else {
-    console.error('Unhandled error:', err.message);
+    console.error('Unhandled error:', err.name);
   }
 
   res.status(500).json({

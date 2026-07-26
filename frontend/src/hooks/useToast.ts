@@ -7,23 +7,41 @@ export interface Toast {
   variant?: 'default' | 'success' | 'destructive';
 }
 
-export function useToast() {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+type Listener = (toasts: Toast[]) => void;
+let listeners: Listener[] = [];
+let toasts: Toast[] = [];
+let toastId = 0;
 
-  const toast = useCallback(
-    (t: Omit<Toast, 'id'>) => {
-      const id = Math.random().toString(36).substring(7);
-      setToasts((prev) => [...prev, { ...t, id }]);
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((p) => p.id !== id));
-      }, 4000);
-    },
-    [],
-  );
+function notifyListeners() {
+  for (const listener of listeners) {
+    listener([...toasts]);
+  }
+}
+
+export function toast(t: Omit<Toast, 'id'>) {
+  const id = (++toastId).toString();
+  toasts = [...toasts, { ...t, id }];
+  notifyListeners();
+  setTimeout(() => {
+    toasts = toasts.filter((p) => p.id !== id);
+    notifyListeners();
+  }, 4000);
+}
+
+export function useToast() {
+  const [state, setState] = useState<Toast[]>([]);
+
+  useState(() => {
+    listeners.push(setState);
+    return () => {
+      listeners = listeners.filter((l) => l !== setState);
+    };
+  });
 
   const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((p) => p.id !== id));
+    toasts = toasts.filter((p) => p.id !== id);
+    notifyListeners();
   }, []);
 
-  return { toasts, toast, dismiss };
+  return { toasts: state, toast, dismiss };
 }

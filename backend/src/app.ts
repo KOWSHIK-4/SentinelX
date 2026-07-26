@@ -41,7 +41,7 @@ const allowedOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'), false);
@@ -107,6 +107,7 @@ for (const { path: routePath, router } of moduleRoutes) {
   app.use(`/api${routePath}`, router);
 }
 
+// V1 routes are mounted under /api/v1 for versioned API access
 app.use('/api/v1', v1Routes);
 
 const uploadsPath = path.resolve(process.cwd(), env.UPLOAD_DIR);

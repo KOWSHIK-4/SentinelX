@@ -19,7 +19,9 @@ export function correlationId(req: Request, res: Response, next: NextFunction): 
   res.on('finish', () => {
     const duration = Date.now() - start;
     const user = (req as Request & { user?: { email?: string } }).user?.email || 'anonymous';
-    console.log(`[${requestId}] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms - ${user}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[${requestId}] ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms - ${user}`);
+    }
   });
 
   next();

@@ -39,6 +39,7 @@ export async function cacheSet(key: string, data: unknown, ttl: number = DEFAULT
   try {
     await redis.setex(key, ttl, JSON.stringify(data));
   } catch {
+    // Silently fail - cache is optional
   }
 }
 
@@ -47,6 +48,7 @@ export async function cacheDelete(key: string): Promise<void> {
   try {
     await redis.del(key);
   } catch {
+    // Silently fail - cache is optional
   }
 }
 
@@ -58,6 +60,7 @@ export async function cacheDeletePattern(pattern: string): Promise<void> {
       await redis.del(...keys);
     }
   } catch {
+    // Silently fail - cache is optional
   }
 }
 

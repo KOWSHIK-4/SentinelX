@@ -20,9 +20,8 @@ import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose } from '@/components/ui/toast';
 import { settingsApi, type SettingsData, type SystemInfo } from '@/lib/api';
-import { useToast } from '@/hooks/useToast';
+import { toast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
 
 const TIMEZONE_OPTIONS = [
@@ -114,7 +113,6 @@ export function Settings() {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const { toasts, toast, dismiss } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasUnsavedChanges = settings && originalSettings && JSON.stringify(settings) !== originalSettings;
@@ -133,7 +131,7 @@ export function Settings() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchSettings();
@@ -527,71 +525,58 @@ export function Settings() {
   };
 
   return (
-    <ToastProvider>
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-            <p className="text-muted-foreground mt-1">Manage your platform configuration.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={resetting || saving}
-            >
-              <RotateCcw className={cn('h-4 w-4 mr-1.5', resetting && 'animate-spin')} />
-              Reset to Defaults
-            </Button>
-            <Button onClick={handleSave} disabled={saving || resetting || !hasUnsavedChanges}>
-              <Save className={cn('h-4 w-4 mr-1.5', saving && 'animate-spin')} />
-              {saving ? 'Saving...' : 'Save Settings'}
-            </Button>
-          </div>
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground mt-1">Manage your platform configuration.</p>
         </div>
-
-        {hasUnsavedChanges && (
-          <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            You have unsaved changes. Make sure to save before leaving.
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
-          <div className="space-y-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  activeTab === tab.id
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                )}
-              >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="space-y-6">
-            {tabContent[activeTab]()}
-          </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            disabled={resetting || saving}
+          >
+            <RotateCcw className={cn('h-4 w-4 mr-1.5', resetting && 'animate-spin')} />
+            Reset to Defaults
+          </Button>
+          <Button onClick={handleSave} disabled={saving || resetting || !hasUnsavedChanges}>
+            <Save className={cn('h-4 w-4 mr-1.5', saving && 'animate-spin')} />
+            {saving ? 'Saving...' : 'Save Settings'}
+          </Button>
         </div>
       </div>
 
-      <ToastViewport />
-      {toasts.map((t) => (
-        <Toast key={t.id} variant={t.variant as 'default' | 'success' | 'destructive' | undefined}>
-          <div className="grid gap-1">
-            <ToastTitle>{t.title}</ToastTitle>
-            {t.description && <ToastDescription>{t.description}</ToastDescription>}
-          </div>
-          <ToastClose onClick={() => dismiss(t.id)} />
-        </Toast>
-      ))}
-    </ToastProvider>
+      {hasUnsavedChanges && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          You have unsaved changes. Make sure to save before leaving.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+        <div className="space-y-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                activeTab === tab.id
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              )}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-6">
+          {tabContent[activeTab]()}
+        </div>
+      </div>
+    </div>
   );
 }

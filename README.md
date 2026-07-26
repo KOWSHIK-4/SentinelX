@@ -1,169 +1,223 @@
-# SentinelX - AI-Powered Security Operations Center Platform
+# SentinelX
 
-A modern, full-featured SOC (Security Operations Center) platform for real-time threat detection, incident response, asset management, and security analytics.
+**AI-Powered Security Operations Center Platform**
+
+SentinelX is a modern, full-featured SOC (Security Operations Center) platform for real-time threat detection, incident response, asset management, and security analytics. Built with a focus on performance, security, and usability.
+
+---
 
 ## Features
 
-- **Incident Management** — Track, triage, and resolve security incidents with severity levels, assignments, and status workflows
-- **Asset Management** — Monitor and manage infrastructure assets with criticality ratings and detailed inventory
-- **Security Analytics** — Deep analytics with trend analysis, severity/status distribution charts, and asset breakdowns
-- **Reporting** — Generate detailed security reports with CSV/PDF export and executive summaries
-- **Team Management** — Role-based access control (Admin, Analyst, Viewer) with team member management
-- **Audit Logging** — Comprehensive audit trail of all system activities with search and filtering
-- **Notification System** — Real-time notifications for incidents, alerts, and system events
-- **Settings** — Customizable organization settings, security policies, appearance, and notification preferences
-- **Dashboard** — Real-time SOC dashboard with key metrics, system health monitoring, and recent activity
-- **Authentication** — Secure JWT-based authentication with registration and login
-- **API Documentation** — Interactive Swagger/OpenAPI documentation at `/api/docs`
+| Capability | Description |
+|---|---|
+| **Incident Management** | Track, triage, and resolve security incidents with severity levels, assignments, and status workflows |
+| **Asset Management** | Monitor and manage infrastructure assets with criticality ratings and detailed inventory |
+| **Security Analytics** | Deep analytics with trend analysis, severity/status distribution charts, and asset breakdowns |
+| **Reporting & Export** | Generate detailed security reports with CSV/PDF export and executive summaries |
+| **Team Management** | Role-based access control (Admin, Analyst, Viewer) with team member management |
+| **Audit Logging** | Comprehensive audit trail of all system activities with search and filtering |
+| **Real-time Notifications** | Socket.IO-powered real-time notifications for incidents, alerts, and system events |
+| **Configurable Settings** | Customizable organization settings, security policies, appearance, and notification preferences |
+| **SOC Dashboard** | Real-time dashboard with key metrics, system health monitoring, and recent activity |
+| **JWT Authentication** | Secure token-based authentication with registration and login flow |
+| **API Documentation** | Interactive Swagger/OpenAPI documentation at `/api/docs` |
+
+---
 
 ## Architecture
 
 ```
-                     ┌─────────────┐
-                     │   Browser   │
-                     └──────┬──────┘
-                            │
-                     ┌──────▼──────┐
-                     │   Nginx     │
-                     │  (Reverse   │
-                     │   Proxy)    │
-                     └──────┬──────┘
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-       ┌──────▼──────┐           ┌────────▼────────┐
-       │   Backend   │           │   Frontend      │
-       │  Express +  │           │  React + Vite   │
-       │  TypeScript │           │  + Tailwind CSS │
-       └──────┬──────┘           └─────────────────┘
-              │
-       ┌──────▼──────┐
-       │  PostgreSQL │
-       │   (Prisma)  │
-       └──────┬──────┘
-              │
-       ┌──────▼──────┐
-       │    Redis    │
-       │  (Cache)    │
-       └─────────────┘
+                      ┌─────────────┐
+                      │   Browser   │
+                      └──────┬──────┘
+                             │
+                      ┌──────▼──────┐
+                      │  Nginx/     │
+                      │  Vercel     │
+                      │ (CDN/Proxy) │
+                      └──────┬──────┘
+                             │
+               ┌─────────────┴─────────────┐
+               │                           │
+        ┌──────▼──────┐           ┌────────▼────────┐
+        │   Backend   │           │   Frontend      │
+        │  Express +  │           │  React + Vite   │
+        │  TypeScript │           │  + Tailwind CSS │
+        │  (Railway)  │           │  (Vercel)       │
+        └──────┬──────┘           └─────────────────┘
+               │
+        ┌──────▼──────┐
+        │  PostgreSQL │
+        │   (Prisma)  │
+        └──────┬──────┘
+               │
+        ┌──────▼──────┐
+        │    Redis    │
+        │  (Optional) │
+        └─────────────┘
 ```
+
+## Folder Structure
+
+```
+SentinelX/
+├── backend/
+│   ├── prisma/                      # Database schema, migrations, seed data
+│   │   ├── schema.prisma            # Data model (User, Role, Incident, Asset, etc.)
+│   │   ├── seed.ts                  # Sample data seeder
+│   │   └── migrations/              # Database migrations
+│   └── src/
+│       ├── app.ts                   # Express application setup
+│       ├── server.ts                # Entry point with HTTP server + Socket.IO
+│       ├── config/
+│       │   ├── env.ts               # Zod-validated environment variables
+│       │   ├── database.ts          # Prisma client singleton
+│       │   ├── redis.ts             # Redis caching layer (optional)
+│       │   ├── sentry.ts            # Error tracking initialization
+│       │   ├── swagger.ts           # OpenAPI documentation
+│       │   └── upload.ts            # Multer file upload config
+│       ├── middleware/
+│       │   ├── auth.ts              # JWT authentication middleware
+│       │   ├── authorize.ts         # Role-based authorization
+│       │   ├── correlationId.ts     # Request tracing
+│       │   ├── errorHandler.ts      # Global error handler
+│       │   ├── requirePermission.ts # Permission-based access control
+│       │   └── validate.ts          # Zod request validation
+│       ├── modules/
+│       │   ├── analytics/           # Analytics overview, trends, distributions
+│       │   ├── assets/              # Asset CRUD and statistics
+│       │   ├── audit/               # Audit logging service
+│       │   ├── auth/                # Registration, login, profile
+│       │   ├── incidents/           # Incident CRUD and statistics
+│       │   ├── notifications/       # Notification management
+│       │   ├── reports/             # Report generation and export
+│       │   ├── settings/            # Organization settings
+│       │   └── team/                # Team member management
+│       ├── types/                   # TypeScript type definitions
+│       └── utils/
+│           ├── cache.ts             # Cache helper with Redis
+│           ├── jwt.ts               # JWT sign/verify
+│           ├── password.ts          # bcrypt hash/compare
+│           ├── pdf.ts               # PDF report generation
+│           └── socket.ts            # Socket.IO event emitter
+├── frontend/
+│   └── src/
+│       ├── App.tsx                  # Root component with lazy-loaded routes
+│       ├── main.tsx                 # Application entry point
+│       ├── components/
+│       │   ├── assets/              # Asset detail and form components
+│       │   ├── auth/                # ProtectedRoute wrapper
+│       │   ├── incidents/           # Incident detail, form, filters, confirm
+│       │   ├── landing/             # Public landing page sections
+│       │   ├── layout/              # AppLayout, Sidebar, Header, Footer
+│       │   ├── theme/               # ThemeToggle component
+│       │   └── ui/                  # Shadcn UI primitives (button, card, table, etc.)
+│       ├── hooks/                   # Custom hooks (useToast, useTheme, etc.)
+│       ├── lib/                     # API client modules (domain-split)
+│       ├── pages/                   # Route pages (14 pages)
+│       ├── providers/               # ThemeProvider context
+│       ├── store/                   # Zustand stores (auth, notifications)
+│       └── styles/                  # Global CSS with Tailwind + CSS variables
+├── docker/
+│   ├── Dockerfile.backend          # Multi-stage backend build
+│   ├── Dockerfile.frontend         # Multi-stage frontend build + Nginx
+│   ├── entrypoint.sh               # DB migration + server start
+│   └── nginx.conf                  # Nginx with security headers + proxy
+├── docker-compose.yml              # Production-ready multi-service setup
+├── railway.json                    # Railway deployment config
+├── package.json                    # Workspace root configuration
+└── README.md
+```
+
+---
 
 ## Tech Stack
 
 ### Frontend
-- **React 18** — UI library with TypeScript
-- **Vite 5** — Build tool and dev server
-- **Tailwind CSS 3** — Utility-first CSS framework
-- **Shadcn UI** — Accessible UI components (Radix primitives)
-- **TanStack Query 5** — Server state management
-- **Zustand 5** — Client state management
-- **React Router 6** — Client-side routing with lazy loading
-- **Framer Motion 11** — Animation library
-- **Recharts** — Charting and data visualization
-- **Socket.IO Client** — Real-time communication
+
+| Technology | Purpose |
+|---|---|
+| **React 18** | UI library with TypeScript |
+| **Vite 5** | Build tool with HMR |
+| **Tailwind CSS 3** | Utility-first CSS framework |
+| **Shadcn UI** | Accessible Radix UI primitives |
+| **TanStack Query 5** | Server state management |
+| **Zustand 5** | Client state management |
+| **React Router 6** | Client-side routing with lazy loading |
+| **Framer Motion 11** | Animations |
+| **Recharts** | Data visualization |
+| **Socket.IO Client** | Real-time communication |
+| **Lucide React** | Icon library |
 
 ### Backend
-- **Node.js 20** — Runtime environment
-- **Express 4** — Web framework
-- **TypeScript 5** — Type safety
-- **Prisma 5** — ORM with PostgreSQL
-- **PostgreSQL 16** — Database
-- **Redis 7** — Caching layer (optional)
-- **JWT** — Authentication (jsonwebtoken)
-- **Zod** — Schema validation
-- **Helmet** — Security headers
-- **CORS** — Cross-origin resource sharing
-- **express-rate-limit** — Rate limiting
-- **Socket.IO** — Real-time events
+
+| Technology | Purpose |
+|---|---|
+| **Node.js 20** | Runtime |
+| **Express 4** | HTTP framework |
+| **TypeScript 5** | Type safety |
+| **Prisma 5** | ORM with PostgreSQL |
+| **PostgreSQL 16** | Primary database |
+| **Redis 7** | Caching (optional) |
+| **JWT (jsonwebtoken)** | Authentication |
+| **Zod** | Schema validation |
+| **Helmet** | Security headers |
+| **Socket.IO** | WebSocket server |
+| **PDFKit** | PDF report generation |
+| **Swagger/OpenAPI** | API documentation |
+| **Sentry** | Error tracking (optional) |
 
 ### DevOps
-- **Docker** — Containerized deployment
-- **Docker Compose** — Multi-container orchestration
-- **Nginx** — Reverse proxy for frontend
-- **Multi-stage builds** — Optimized image sizes
+
+| Technology | Purpose |
+|---|---|
+| **Docker** | Containerization |
+| **Docker Compose** | Multi-orchestration |
+| **Nginx** | Reverse proxy |
+| **Railway** | Backend deployment |
+| **Vercel** | Frontend deployment |
+| **GitHub Actions** | CI/CD |
+
+---
 
 ## Installation
 
 ### Prerequisites
+
 - Node.js 20+
 - PostgreSQL 16+
+- npm 10+
 - Docker & Docker Compose (optional, for containerized setup)
 - Redis 7+ (optional, for caching)
 
-### Environment Variables
-
-Copy `.env.example` to `.env` in the `backend/` directory:
+### Quick Start
 
 ```bash
-cp backend/.env.example backend/.env
-```
+# 1. Clone the repository
+git clone https://github.com/your-org/sentinelx.git
+cd sentinelx
 
-#### Backend Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NODE_ENV` | Environment mode | `development` | No |
-| `PORT` | Server port | `5000` | No |
-| `API_VERSION` | API version | `1.0.0` | No |
-| `DATABASE_URL` | PostgreSQL connection string | — | **Yes** |
-| `JWT_SECRET` | JWT signing secret (min 32 chars) | — | **Yes** |
-| `JWT_EXPIRES_IN` | Token expiration | `7d` | No |
-| `CORS_ORIGIN` | Allowed CORS origins (comma-separated) | `http://localhost:5173` | No |
-| `RATE_LIMIT_WINDOW_MS` | Rate limit window (ms) | `900000` (15 min) | No |
-| `RATE_LIMIT_MAX` | Max requests per window | `100` | No |
-| `REDIS_URL` | Redis connection string (for caching) | — | No |
-| `CLOUDINARY_URL` | Cloudinary URL for image uploads | — | No |
-| `UPLOAD_DIR` | Local upload directory | `uploads` | No |
-| `SENTRY_DSN` | Sentry error tracking DSN | — | No |
-
-#### Frontend Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL | `http://localhost:5000/api` |
-| `VITE_SOCKET_URL` | WebSocket server URL | `http://localhost:5000` |
-| `VITE_SENTRY_DSN` | Sentry error tracking DSN | — |
-
-### Running Locally
-
-```bash
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Generate Prisma client
-npm run db:generate -w backend
+# 3. Set up environment variables
+cp backend/.env.example backend/.env
+# Edit backend/.env with your database URL and JWT secret
 
-# Push database schema
+# 4. Generate Prisma client and push schema
+npm run db:generate -w backend
 npm run db:push -w backend
 
-# Seed database (optional)
+# 5. Seed the database (optional, creates sample data)
 npm run db:seed -w backend
 
-# Start development servers
+# 6. Start development servers
 npm run dev
 ```
 
-The backend will start at `http://localhost:5000` and the frontend at `http://localhost:5173`.
+The backend starts at `http://localhost:5000` and the frontend at `http://localhost:5173`.
 
-### Using Redis Caching (Optional)
-
-Set the `REDIS_URL` environment variable to enable Redis caching:
-
-```bash
-REDIS_URL=redis://localhost:6379
-```
-
-When Redis is not configured, the application falls back gracefully without caching. Cached data includes:
-- Dashboard statistics (30s TTL)
-- Analytics overview, incidents, assets, trends (60-120s TTL)
-- Reports data (120s TTL)
-- Asset statistics (30s TTL)
-
-Cache is automatically invalidated when underlying data changes (incident/asset CRUD operations).
-
-## Docker Setup
-
-### Build and Run
+### Docker Setup
 
 ```bash
 # Build and start all services
@@ -175,214 +229,226 @@ docker compose logs -f
 # Stop services
 docker compose down
 
-# Remove volumes (resets database)
+# Full reset (removes volumes)
 docker compose down -v
 ```
 
-### Services
+---
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `postgres` | 5432 | PostgreSQL 16 database |
-| `redis` | 6379 | Redis 7 cache (optional) |
-| `backend` | 5000 | Express API server |
-| `frontend` | 80 | Nginx-served React app |
+## Environment Variables
 
-### Production Build
+### Backend (`backend/.env`)
+
+| Variable | Description | Default | Required |
+|---|---|---|---|
+| `NODE_ENV` | Environment mode | `development` | No |
+| `PORT` | Server port | `5000` | No |
+| `DATABASE_URL` | PostgreSQL connection string | — | **Yes** |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | — | **Yes** |
+| `JWT_EXPIRES_IN` | Token expiration duration | `7d` | No |
+| `CORS_ORIGIN` | Allowed CORS origins (comma-separated) | `http://localhost:5173` | No |
+| `RATE_LIMIT_WINDOW_MS` | Rate limit window (milliseconds) | `900000` (15 min) | No |
+| `RATE_LIMIT_MAX` | Max requests per window | `100` | No |
+| `API_VERSION` | API version string | `1.0.0` | No |
+| `REDIS_URL` | Redis connection string | — | No |
+| `CLOUDINARY_URL` | Cloudinary URL for uploads | — | No |
+| `UPLOAD_DIR` | Local upload directory | `uploads` | No |
+| `SENTRY_DSN` | Sentry error tracking DSN | — | No |
+
+### Frontend (`frontend/.env`)
+
+| Variable | Description | Default |
+|---|---|---|
+| `VITE_API_URL` | Backend API URL | `http://localhost:5000/api` |
+| `VITE_SOCKET_URL` | WebSocket server URL | `http://localhost:5000` |
+| `VITE_SENTRY_DSN` | Sentry error tracking DSN | — |
+
+---
+
+## Deployment
+
+### Backend (Railway)
+
+1. Connect your GitHub repository to Railway
+2. Set the root directory (or use the monorepo setup)
+3. Railway uses `railway.json` for build/deploy configuration
+4. Set required environment variables:
+   - `DATABASE_URL` — Railway PostgreSQL plugin
+   - `JWT_SECRET` — Generate a 64-char random string
+   - `CORS_ORIGIN` — Your frontend Vercel URL
+
+### Frontend (Vercel)
+
+1. Connect your GitHub repository to Vercel
+2. Set root directory to `frontend/`
+3. Configure build command: `npm run build`
+4. Set output directory: `dist`
+5. Set environment variables:
+   - `VITE_API_URL` — Railway backend URL (e.g., `https://your-app.railway.app/api`)
+   - `VITE_SOCKET_URL` — Railway backend URL (e.g., `https://your-app.railway.app`)
+
+### Docker (Any Cloud)
 
 ```bash
-# Build all services
-npm run build
-
-# Or build individually
-npm run build -w backend
-npm run build -w frontend
+# Build and deploy with docker compose
+docker compose up --build -d
 ```
 
-## Performance Optimizations
-
-- **Redis Caching** — Reduces database load for dashboard, analytics, and reports
-- **Efficient Prisma Queries** — Parallelized count/find queries with selective includes
-- **Pagination** — All list endpoints support pagination with configurable page/limit
-- **Sort Field Validation** — Sort fields are whitelisted to prevent errors
-- **Selective Includes** — Only requested relations are loaded
-- **Connection Pooling** — Prisma handles connection pooling automatically
-
-## Security
-
-- **Helmet** — Comprehensive security headers (HSTS, XSS, nosniff, frameguard, referrer policy)
-- **CORS** — Strict origin checking with credentials support
-- **Rate Limiting** — 100 requests per 15-minute window (configurable)
-- **Request Size Limits** — 10KB JSON body limit, 10KB URL-encoded limit
-- **Input Validation** — Zod schemas on all API endpoints
-- **JWT Authentication** — Bearer token with 7-day expiration (configurable)
-- **Role-Based Access Control** — Admin, Analyst, Viewer roles with granular permissions
-- **Password Hashing** — bcrypt with 12 rounds
-- **Error Handling** — Structured error responses, no stack traces in production
-- **Nginx Security Headers** — X-Frame-Options, X-Content-Type-Options, XSS Protection, Permissions-Policy
+---
 
 ## API Documentation
 
 Interactive API documentation is available at `/api/docs` when the server is running.
 
-### Endpoints
+### Endpoints Overview
 
 #### System
-- `GET /api/health` — Health check with database status
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/health` | Health check with database status |
 
 #### Authentication
-- `POST /api/auth/register` — Register a new user
-- `POST /api/auth/login` — Login with email/password
-- `GET /api/auth/profile` — Get current user profile (auth required)
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/register` | No | Register new user |
+| POST | `/api/auth/login` | No | Login with email/password |
+| GET | `/api/auth/profile` | Yes | Get current user profile |
 
 #### Incidents
-- `GET /api/incidents` — List incidents (paginated, filterable)
-- `POST /api/incidents` — Create incident (Admin/Analyst)
-- `GET /api/incidents/stats` — Dashboard statistics
-- `GET /api/incidents/:id` — Get incident details
-- `PUT /api/incidents/:id` — Update incident (Admin/Analyst)
-- `DELETE /api/incidents/:id` — Delete incident (Admin)
+| Method | Path | Auth | Roles |
+|---|---|---|---|
+| GET | `/api/incidents` | Yes | All |
+| POST | `/api/incidents` | Yes | Admin, Analyst |
+| GET | `/api/incidents/stats` | Yes | All |
+| GET | `/api/incidents/:id` | Yes | All |
+| PUT | `/api/incidents/:id` | Yes | Admin, Analyst |
+| DELETE | `/api/incidents/:id` | Yes | Admin |
 
 #### Assets
-- `GET /api/assets` — List assets (paginated, filterable)
-- `POST /api/assets` — Create asset (Admin/Analyst)
-- `GET /api/assets/stats` — Asset dashboard statistics
-- `GET /api/assets/:id` — Get asset details
-- `PUT /api/assets/:id` — Update asset (Admin/Analyst)
-- `DELETE /api/assets/:id` — Delete asset (Admin)
+| Method | Path | Auth | Roles |
+|---|---|---|---|
+| GET | `/api/assets` | Yes | All |
+| POST | `/api/assets` | Yes | Admin, Analyst |
+| GET | `/api/assets/stats` | Yes | All |
+| GET | `/api/assets/:id` | Yes | All |
+| PUT | `/api/assets/:id` | Yes | Admin, Analyst |
+| DELETE | `/api/assets/:id` | Yes | Admin |
 
-#### Analytics
-- `GET /api/analytics/overview` — Analytics overview
-- `GET /api/analytics/incidents` — Incident analytics
-- `GET /api/analytics/assets` — Asset analytics
-- `GET /api/analytics/trends` — Trend data
+#### Analytics (all require auth)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/analytics/overview` | Analytics overview |
+| GET | `/api/analytics/incidents` | Incident analytics |
+| GET | `/api/analytics/assets` | Asset analytics |
+| GET | `/api/analytics/trends` | Trend data |
 
-#### Reports
-- `GET /api/reports/incidents` — Incident report
-- `GET /api/reports/assets` — Asset report
-- `GET /api/reports/summary` — Executive summary
-- `POST /api/reports/export` — Export report data (PDF/CSV)
+#### Reports (all require auth)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/reports/incidents` | Incident report |
+| GET | `/api/reports/assets` | Asset report |
+| GET | `/api/reports/summary` | Executive summary |
+| POST | `/api/reports/export` | Export (PDF/CSV) |
 
-#### Team
-- `GET /api/team` — List team members
-- `POST /api/team` — Create team member (Admin)
-- `PUT /api/team/:id` — Update team member (Admin)
-- `DELETE /api/team/:id` — Delete team member (Admin)
+#### Team (all require Admin)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/team` | List team members |
+| POST | `/api/team` | Create team member |
+| PUT | `/api/team/:id` | Update team member |
+| DELETE | `/api/team/:id` | Delete team member |
 
-#### Settings
-- `GET /api/settings` — Get application settings
-- `PUT /api/settings` — Update settings (Admin)
-- `POST /api/settings/reset` — Reset settings (Admin)
-- `GET /api/settings/system` — System information
-- `POST /api/settings/logo` — Upload organization logo
+#### Settings (all require Admin)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/settings` | Get settings |
+| PUT | `/api/settings` | Update settings |
+| POST | `/api/settings/reset` | Reset to defaults |
+| GET | `/api/settings/system` | System info |
+| POST | `/api/settings/logo` | Upload logo |
 
-#### Notifications
-- `GET /api/notifications` — List notifications
-- `POST /api/notifications` — Create notification
-- `PUT /api/notifications/read-all` — Mark all as read
-- `PUT /api/notifications/:id/read` — Mark notification as read
-- `DELETE /api/notifications/:id` — Delete notification
+#### Notifications (all require auth)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/notifications` | List notifications |
+| POST | `/api/notifications` | Create notification |
+| PUT | `/api/notifications/read-all` | Mark all read |
+| PUT | `/api/notifications/:id/read` | Mark one read |
+| DELETE | `/api/notifications/:id` | Delete notification |
 
-#### Audit
-- `GET /api/audit` — List audit logs (paginated, filterable)
-- `GET /api/audit/:id` — Get audit log details
-- `DELETE /api/audit/:id` — Delete audit log (Admin)
-- `DELETE /api/audit` — Clear all audit logs (Admin)
+#### Audit (all require auth)
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/audit` | All (paginated) |
+| GET | `/api/audit/:id` | All |
+| DELETE | `/api/audit/:id` | Admin |
+| DELETE | `/api/audit` | Admin (clear all) |
 
-## Project Structure
+---
 
-```
-SentinelX/
-├── backend/
-│   ├── prisma/                    # Database schema, migrations, seed
-│   └── src/
-│       ├── config/                # Env, database, redis, swagger, sentry
-│       ├── middleware/            # Auth, authorization, error handling, validation
-│       ├── modules/               # Feature modules (auth, incidents, assets, etc.)
-│       │   ├── auth/
-│       │   ├── incidents/
-│       │   ├── assets/
-│       │   ├── analytics/
-│       │   ├── reports/
-│       │   ├── team/
-│       │   ├── settings/
-│       │   ├── notifications/
-│       │   └── audit/
-│       ├── types/                 # TypeScript interfaces
-│       ├── utils/                 # JWT, password, PDF, socket, cache utilities
-│       ├── app.ts                 # Express application setup
-│       └── server.ts              # Server entry point
-├── frontend/
-│   └── src/
-│       ├── components/            # Reusable UI components
-│       ├── hooks/                 # Custom React hooks
-│       ├── lib/                   # API client (domain-split modules)
-│       │   ├── client.ts          # Shared HTTP client
-│       │   ├── api.ts             # Backward-compatible re-exports
-│       │   ├── auth.ts
-│       │   ├── incidents.ts
-│       │   ├── assets.ts
-│       │   ├── analytics.ts
-│       │   ├── reports.ts
-│       │   ├── notifications.ts
-│       │   ├── audit.ts
-│       │   ├── settings.ts
-│       │   ├── users.ts
-│       │   └── dashboard.ts
-│       ├── pages/                 # Route pages (14 pages)
-│       ├── providers/             # Theme provider
-│       ├── store/                 # Zustand stores
-│       └── styles/                # Global CSS with Tailwind
-├── docker/
-│   ├── Dockerfile.backend         # Backend multi-stage build
-│   ├── Dockerfile.frontend        # Frontend multi-stage build
-│   ├── entrypoint.sh              # Database migration script
-│   └── nginx.conf                 # Nginx configuration
-├── docker-compose.yml             # Production Docker Compose
-├── package.json                   # Root workspace configuration
-└── README.md                      # This file
-```
+## Security
 
-## Deployment
+- **Helmet** — HSTS, XSS filter, nosniff, frameguard, referrer policy
+- **CORS** — Strict origin checking with credentials, whitelist-based
+- **Rate Limiting** — 100 requests per 15 minutes (configurable), 5 login attempts per minute
+- **Input Validation** — Zod schemas on every API endpoint
+- **JWT Authentication** — Bearer tokens with configurable expiration
+- **Role-Based Access Control** — Admin, Analyst, Viewer roles with granular permissions
+- **Permission System** — Resource+action based permissions assigned to roles
+- **Password Security** — bcrypt hashing (12 rounds), complexity requirements (uppercase, lowercase, number)
+- **Request Size Limits** — 10KB JSON body limit
+- **Error Handling** — Structured errors, no stack traces in production
+- **Nginx Security Headers** — X-Frame-Options, X-Content-Type-Options, XSS Protection, Permissions-Policy, HSTS
+- **Security Headers (Vercel)** — Configured via `vercel.json` headers
+- **Socket Authentication** — JWT-verified WebSocket connections
 
-### Production Checklist
+---
 
-- [x] JWT secret with 32+ random characters
-- [x] Helmet security headers enabled
-- [x] CORS restricted to known origins
-- [x] Rate limiting configured
-- [x] Input validation (Zod) on all endpoints
-- [x] Role-based access control
-- [x] Password hashing (bcrypt, 12 rounds)
-- [x] Database connection pooling (Prisma)
-- [x] Redis caching (optional)
-- [x] Graceful shutdown handling
-- [x] Health check endpoint
-- [x] API documentation (Swagger)
-- [x] Docker multi-stage builds
-- [x] Docker HEALTHCHECK configured
-- [x] Nginx security headers
-- [x] Request size limits
-- [x] Missing env var validation on startup
-- [x] Unhandled promise rejection handling
-- [x] Accessible UI (aria labels, roles, semantic HTML)
+## Performance
 
-### Deploy with Docker
+- **Redis Caching** — Reduces database load for dashboard, analytics, and reports (30-120s TTL)
+- **Automatic Cache Invalidation** — Cache cleared on data mutations
+- **Efficient Prisma Queries** — Parallelized queries with selective includes
+- **Pagination** — All list endpoints support paginated responses
+- **Lazy Loading** — All page components are lazy-loaded with React.Suspense
+- **Code Splitting** — Vendor, UI, charts, and animation chunks separated in Vite build
+- **Connection Pooling** — Prisma handles PostgreSQL connection pooling
+- **Optimized Docker Builds** — Multi-stage builds with minimal final image size
+- **Non-root Containers** — Containers run as unprivileged users
 
-```bash
-# 1. Set production environment variables
-export JWT_SECRET=<your-strong-random-secret>
+---
 
-# 2. Build and start
-docker compose up --build -d
+## Future Roadmap
 
-# 3. Verify health
-curl http://localhost:5000/api/health
+- [ ] Multi-factor authentication (TOTP)
+- [ ] SIEM integration connectors (Splunk, ELK)
+- [ ] Automated threat intelligence feeds
+- [ ] Custom dashboard widgets
+- [ ] Advanced RBAC with custom roles
+- [ ] Email notification delivery
+- [ ] Dark/light mode system preference detection
+- [ ] Export to PDF with charts
+- [ ] Webhook integrations (Slack, Teams, PagerDuty)
+- [ ] Mobile-responsive sidebar
+- [ ] E2E encryption for sensitive data
+- [ ] Kubernetes deployment manifests
 
-# 4. Access application
-open http://localhost
-```
+---
+
+## Screenshots
+
+> Screenshots will be added here.
+
+| Dashboard | Incidents | Analytics |
+|---|---|---|
+| `![Dashboard](screenshots/dashboard.png)` | `![Incidents](screenshots/incidents.png)` | `![Analytics](screenshots/analytics.png)` |
+
+---
 
 ## License
 
 MIT
+
+---
+
+*Built with TypeScript, React, Express, and ❤️*

@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Loading } from '@/pages/Loading';
 import { ErrorPage } from '@/pages/ErrorPage';
+import { Toaster } from '@/components/ui/toaster';
 import { useSocket } from '@/hooks/useSocketEvent';
 import { useNotificationSocket } from '@/store/notificationStore';
 
@@ -68,6 +69,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AppContent />
+          <Toaster />
         </BrowserRouter>
       </QueryClientProvider>
     </ThemeProvider>
