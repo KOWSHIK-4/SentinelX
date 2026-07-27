@@ -202,9 +202,9 @@ https://github.com/KOWSHIK-4
 | | | |
 |---|---|---|
 | ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) | ![Incidents](screenshots/incidents.png) |
-| ![Create Incident](screenshots/create-incident.png) | ![Assets](screenshots/assets.png) | ![Analytics](screenshots/analytics.png) |
-| ![Notifications](screenshots/notifications.png) | ![Reports](screenshots/reports.png) | ![Audit Logs](screenshots/auditlogs.png) |
-| ![Team](screenshots/team.png) | ![Settings](screenshots/settings.png) | ![Pending Approval](screenshots/pending-approval.png) |
+| ![Assets](screenshots/assets.png) | ![Analytics](screenshots/analytics.png) | ![Notifications](screenshots/notifications.png) |
+| ![Reports](screenshots/reports.png) | ![Audit Logs](screenshots/auditlogs.png) | ![Team](screenshots/team.png) |
+| ![Settings](screenshots/settings.png) | ![Pending Approval](screenshots/pending-approval.png) |
 
 ---
 
